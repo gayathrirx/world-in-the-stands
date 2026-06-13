@@ -82,23 +82,23 @@ def filter_match(active_filter: str):
 
 
 # ── UI ─────────────────────────────────────────────────────────────────────
-with gr.Blocks(
-    theme=gr.themes.Base(
-        primary_hue="yellow",
-        neutral_hue="slate",
-    ).set(
-        body_background_fill="#0f0f1a",
-        block_background_fill="#16213e",
-        block_border_color="rgba(255,255,255,0.08)",
-        input_background_fill="#1a1a2e",
-    ),
-    title="World In The Stands ⚽",
-    css="""
-    .gradio-container { max-width: 640px !important; margin: 0 auto !important; }
-    footer { display: none !important; }
-    .tab-nav button { font-size: 14px !important; font-weight: 700 !important; }
-    """,
-) as demo:
+_theme = gr.themes.Base(
+    primary_hue="yellow",
+    neutral_hue="slate",
+).set(
+    body_background_fill="#0f0f1a",
+    block_background_fill="#16213e",
+    block_border_color="rgba(255,255,255,0.08)",
+    input_background_fill="#1a1a2e",
+)
+
+_css = """
+.gradio-container { max-width: 640px !important; margin: 0 auto !important; }
+footer { display: none !important; }
+.tab-nav button { font-size: 14px !important; font-weight: 700 !important; }
+"""
+
+with gr.Blocks(title="World In The Stands ⚽") as demo:
 
     gr.HTML(HEADER_HTML)
     gr.HTML(SOURCE_LEGEND)
@@ -180,4 +180,4 @@ with gr.Blocks(
 
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(theme=_theme, css=_css)
