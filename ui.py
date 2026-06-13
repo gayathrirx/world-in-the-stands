@@ -1,3 +1,15 @@
+SOCIAL_SOURCES = {"reddit", "twitter", "instagram", "facebook"}
+
+
+def _extract_domain(url: str) -> str:
+    try:
+        from urllib.parse import urlparse
+        host = urlparse(url).netloc.replace("www.", "")
+        return host if host else url[:40]
+    except Exception:
+        return ""
+
+
 def render_card(item: dict) -> str:
     cat = item["category"]
     src = item["source"]
@@ -8,20 +20,23 @@ def render_card(item: dict) -> str:
     flag = item.get("flag", "🌍")
     country = item.get("country", "International")
     author = item.get("author", "")
-    has_link = item.get("has_direct_link", False)
     src_key = item.get("source_key", "web")
 
     display_text = title if title else body
     if len(display_text) > 280:
         display_text = display_text[:277] + "..."
 
-    link_label = "View Post" if has_link else "View Source"
-    link_note = "" if has_link else '<span class="indirect-note">via search</span>'
-
     score = item.get("score")
     score_html = f'<span class="reaction">⬆️ {score}</span>' if score else ""
-
     author_html = f'<span class="username">u/{author}</span>' if author else ""
+
+    domain = _extract_domain(url)
+    domain_html = f'<span class="domain-note">{domain}</span>' if domain else ""
+
+    if src_key in SOCIAL_SOURCES:
+        link_html = f'<a href="{url}" target="_blank" class="view-link">View Post →</a>'
+    else:
+        link_html = ""
 
     return f"""
 <div class="card cat-{cat['css']} src-{src_key}">
@@ -40,10 +55,11 @@ def render_card(item: dict) -> str:
       <strong>🤖</strong> {caption}
     </div>
     <div class="card-footer">
-      <span class="source-badge badge-src-{src_key}">{src['icon']} {src['label']}{link_note}</span>
+      <span class="source-badge badge-src-{src_key}">{src['icon']} {src['label']}</span>
       <div class="footer-right">
+        {domain_html}
         {score_html}
-        <a href="{url}" target="_blank" class="view-link">{link_label} →</a>
+        {link_html}
       </div>
     </div>
   </div>
@@ -153,6 +169,7 @@ STYLES = """
 .indirect-note { font-size: 9px; opacity: 0.7; margin-left: 3px; }
 .footer-right { display: flex; align-items: center; gap: 10px; }
 .reaction { font-size: 11px; color: var(--muted); }
+.domain-note { font-size: 11px; color: #666; font-style: italic; }
 .view-link {
   font-size: 12px; font-weight: 700; color: var(--gold);
   text-decoration: none;

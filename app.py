@@ -57,26 +57,24 @@ def _label_to_key(label: str, filter_list: list) -> str:
     return next((v for l, v in filter_list if l == label), "all")
 
 
-def refresh_stories(active_filter: str):
+def refresh_stories():
     global stories_cache
-    key = _label_to_key(active_filter, FILTERS)
     status = render_status("Scout Agent searching web & Reddit for fan stories…")
-    yield status, render_feed(stories_cache, key)
+    yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
 
     stories_cache = run_stories_pipeline()
     status = render_status(f"✅ {len(stories_cache)} stories found", is_loading=False)
-    yield status, render_feed(stories_cache, key)
+    yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
 
 
-def refresh_match(active_filter: str):
+def refresh_match():
     global match_cache
-    key = _label_to_key(active_filter, MATCH_FILTERS)
     status = render_status("Scout Agent searching for match reactions & buzz…")
-    yield status, render_feed(match_cache, key)
+    yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
     match_cache = run_match_pipeline()
     status = render_status(f"✅ {len(match_cache)} match stories found", is_loading=False)
-    yield status, render_feed(match_cache, key)
+    yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
 
 def filter_stories(active_filter: str):
@@ -134,8 +132,8 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
 
             story_btn.click(
                 fn=refresh_stories,
-                inputs=[story_filter],
-                outputs=[story_status, story_feed],
+                inputs=[],
+                outputs=[story_status, story_feed, story_filter],
             )
             story_filter.change(
                 fn=lambda f: filter_stories(
@@ -168,8 +166,8 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
 
             match_btn.click(
                 fn=refresh_match,
-                inputs=[match_filter],
-                outputs=[match_status, match_feed],
+                inputs=[],
+                outputs=[match_status, match_feed, match_filter],
             )
             match_filter.change(
                 fn=lambda f: filter_match(
