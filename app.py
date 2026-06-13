@@ -53,24 +53,30 @@ SOURCE_LEGEND = """
 </div>"""
 
 
+def _label_to_key(label: str, filter_list: list) -> str:
+    return next((v for l, v in filter_list if l == label), "all")
+
+
 def refresh_stories(active_filter: str):
     global stories_cache
+    key = _label_to_key(active_filter, FILTERS)
     status = render_status("Scout Agent searching web & Reddit for fan stories…")
-    yield status, render_feed(stories_cache, active_filter)
+    yield status, render_feed(stories_cache, key)
 
     stories_cache = run_stories_pipeline()
     status = render_status(f"✅ {len(stories_cache)} stories found", is_loading=False)
-    yield status, render_feed(stories_cache, active_filter)
+    yield status, render_feed(stories_cache, key)
 
 
 def refresh_match(active_filter: str):
     global match_cache
+    key = _label_to_key(active_filter, MATCH_FILTERS)
     status = render_status("Scout Agent searching for match reactions & buzz…")
-    yield status, render_feed(match_cache, active_filter)
+    yield status, render_feed(match_cache, key)
 
     match_cache = run_match_pipeline()
     status = render_status(f"✅ {len(match_cache)} match stories found", is_loading=False)
-    yield status, render_feed(match_cache, active_filter)
+    yield status, render_feed(match_cache, key)
 
 
 def filter_stories(active_filter: str):
@@ -110,7 +116,7 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
             with gr.Row():
                 story_filter = gr.Radio(
                     choices=[f[0] for f in FILTERS],
-                    value="🌐 All",
+                    value=FILTERS[0][0],
                     label="Filter",
                     interactive=True,
                 )
@@ -180,4 +186,4 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
 
 
 if __name__ == "__main__":
-    demo.launch(theme=_theme, css=_css)
+    demo.launch()
