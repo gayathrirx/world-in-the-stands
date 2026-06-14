@@ -65,10 +65,16 @@ def render_card(item: dict) -> str:
 
 def render_feed(items: list[dict], active_filter: str = "all") -> str:
     if not items:
-        return '<div class="empty-state">🔍 No stories yet — hit the button to find some!</div>'
+        return '<div class="empty-state">No stories yet — hit Refresh to find some!</div>'
 
-    # Only show cards from social platforms
-    social = [i for i in items if i.get("source_key") in SOCIAL_SOURCES]
+    # Only show social platform cards, deduplicate by URL
+    seen_urls = set()
+    social = []
+    for i in items:
+        url = i.get("url", "")
+        if i.get("source_key") in SOCIAL_SOURCES and url not in seen_urls:
+            seen_urls.add(url)
+            social.append(i)
 
     filtered = social if active_filter == "all" else [
         i for i in social if i["category_key"] == active_filter

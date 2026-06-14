@@ -3,11 +3,10 @@ import os
 import time
 import json
 from pathlib import Path
-from agents import run_stories_pipeline, run_match_pipeline
+from agents import run_stories_pipeline
 from ui import render_feed, STYLES, render_status
 
 STORIES_CACHE_FILE = Path("stories_cache.json")
-MATCH_CACHE_FILE   = Path("match_cache.json")
 REFRESH_COOLDOWN   = 3600  # 1 hour
 
 
@@ -31,9 +30,7 @@ def _load(path: Path) -> list:
 
 # ── state ──────────────────────────────────────────────────────────────────
 stories_cache: list[dict] = _load(STORIES_CACHE_FILE)
-match_cache:   list[dict] = _load(MATCH_CACHE_FILE)
 last_stories_refresh: float = STORIES_CACHE_FILE.stat().st_mtime if STORIES_CACHE_FILE.exists() else 0
-last_match_refresh:   float = MATCH_CACHE_FILE.stat().st_mtime   if MATCH_CACHE_FILE.exists()   else 0
 
 FILTERS = [
     ("All", "all"),
@@ -44,13 +41,6 @@ FILTERS = [
     ("Stadium", "stadium"),
 ]
 
-MATCH_FILTERS = [
-    ("All", "all"),
-    ("Match Buzz", "match"),
-    ("Heartwarming", "heartwarming"),
-    ("Funny", "funny"),
-]
-
 HEADER_HTML = f"""{STYLES}
 <div style="text-align:center;padding:20px 16px 12px;
   background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
@@ -59,7 +49,7 @@ HEADER_HTML = f"""{STYLES}
     World In The Stands
   </h1>
   <p style="color:#aaa;font-size:13px;margin:6px 0 0;">
-    World Cup 2026 · Real fan stories from Reddit, X, Instagram & Facebook
+    Real fan stories · World In The Stands
   </p>
   <div style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;
     background:rgba(255,60,60,0.15);border:1px solid rgba(255,60,60,0.3);
@@ -71,14 +61,19 @@ HEADER_HTML = f"""{STYLES}
   <style>@keyframes blink{{0%,100%{{opacity:1}}50%{{opacity:0.3}}}}</style>
 </div>"""
 
-SOURCE_LEGEND = """
-<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-family:-apple-system,sans-serif;">
-  <span style="font-size:11px;color:#888;align-self:center;">Sources:</span>
-  <span style="font-size:11px;background:rgba(255,69,0,0.15);color:#ff6b35;padding:3px 10px;border-radius:20px;font-weight:600;">Reddit</span>
-  <span style="font-size:11px;background:rgba(29,155,240,0.15);color:#5bb8f5;padding:3px 10px;border-radius:20px;font-weight:600;">X / Twitter</span>
-  <span style="font-size:11px;background:rgba(225,48,108,0.15);color:#e1306c;padding:3px 10px;border-radius:20px;font-weight:600;">Instagram</span>
-  <span style="font-size:11px;background:rgba(24,119,242,0.15);color:#4a90e2;padding:3px 10px;border-radius:20px;font-weight:600;">Facebook</span>
-  <span style="font-size:11px;color:#666;align-self:center;">· click any card to open</span>
+FOOTER_HTML = """
+<div style="text-align:center;padding:20px 16px;color:#555;font-size:11px;
+  font-family:-apple-system,sans-serif;border-top:1px solid rgba(255,255,255,0.06);
+  margin-top:8px;">
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:10px;">
+    <span style="color:#888;">Sources:</span>
+    <span style="background:rgba(255,69,0,0.15);color:#ff6b35;padding:2px 10px;border-radius:20px;font-weight:600;">Reddit</span>
+    <span style="background:rgba(29,155,240,0.15);color:#5bb8f5;padding:2px 10px;border-radius:20px;font-weight:600;">X / Twitter</span>
+    <span style="background:rgba(225,48,108,0.15);color:#e1306c;padding:2px 10px;border-radius:20px;font-weight:600;">Instagram</span>
+    <span style="background:rgba(24,119,242,0.15);color:#4a90e2;padding:2px 10px;border-radius:20px;font-weight:600;">Facebook</span>
+    <span style="color:#666;">· click any card to open</span>
+  </div>
+  &copy; 2026 gaamaa &nbsp;·&nbsp; Powered by Claude AI &nbsp;·&nbsp; World In The Stands
 </div>"""
 
 
@@ -88,9 +83,6 @@ def _mins_until_next(last: float) -> int:
 
 def _stories_html(filter_key="all"):
     return render_status(f"{len(stories_cache)} stories loaded", is_loading=False) + render_feed(stories_cache, filter_key)
-
-def _match_html(filter_key="all"):
-    return render_status(f"{len(match_cache)} match stories loaded", is_loading=False) + render_feed(match_cache, filter_key)
 
 
 def auto_load_stories():
@@ -118,29 +110,9 @@ def refresh_stories():
     yield _stories_html(), FILTERS[0][0]
 
 
-def refresh_match():
-    global match_cache, last_match_refresh
-    if match_cache and (time.time() - last_match_refresh) < REFRESH_COOLDOWN:
-        mins = _mins_until_next(last_match_refresh)
-        yield render_status(f"Next refresh available in {mins} min", is_loading=False) + render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
-        return
-
-    yield render_status("Searching for match reactions...") + render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
-
-    match_cache = run_match_pipeline()
-    last_match_refresh = time.time()
-    _save(MATCH_CACHE_FILE, match_cache)
-    yield _match_html(), MATCH_FILTERS[0][0]
-
-
 def filter_stories(active_filter: str):
     key = next((v for l, v in FILTERS if l == active_filter), "all")
     return _stories_html(key)
-
-
-def filter_match(active_filter: str):
-    key = next((v for l, v in MATCH_FILTERS if l == active_filter), "all")
-    return _match_html(key)
 
 
 # ── UI ─────────────────────────────────────────────────────────────────────
@@ -157,41 +129,21 @@ _theme = gr.themes.Base(
 _css = """
 .gradio-container { max-width: 640px !important; margin: 0 auto !important; }
 footer { display: none !important; }
-.tab-nav button { font-size: 14px !important; font-weight: 700 !important; }
 .refresh-btn { border-radius: 50px !important; font-size: 15px !important; font-weight: 800 !important; letter-spacing: 0.3px !important; }
-.tabitem > .block > .label-wrap { display: none !important; }
 """
 
 with gr.Blocks(title="World In The Stands") as demo:
 
     gr.HTML(HEADER_HTML)
-    gr.HTML(SOURCE_LEGEND)
 
-    with gr.Tabs():
+    story_btn = gr.Button("↻  Refresh Stories", variant="primary", size="lg", elem_classes=["refresh-btn"])
+    story_filter = gr.Radio(choices=[f[0] for f in FILTERS], value=FILTERS[0][0], label="Filter by", interactive=True)
+    story_out = gr.HTML(render_status("Loading stories...", is_loading=True))
 
-        # ── Tab 1: Fan Stories ─────────────────────────────────────────────
-        with gr.Tab("Fan Stories"):
-            story_btn = gr.Button("↻  Refresh Stories", variant="primary", size="lg", elem_classes=["refresh-btn"])
-            story_filter = gr.Radio(choices=[f[0] for f in FILTERS], value=FILTERS[0][0], label="Filter by", interactive=True)
-            story_out = gr.HTML(render_status("Loading stories...", is_loading=True))
+    gr.HTML(FOOTER_HTML)
 
-            story_btn.click(fn=refresh_stories, inputs=[], outputs=[story_out, story_filter])
-            story_filter.change(fn=filter_stories, inputs=[story_filter], outputs=[story_out])
-
-        with gr.Tab("Match Buzz"):
-            match_btn = gr.Button("↻  Refresh Match Buzz", variant="primary", size="lg", elem_classes=["refresh-btn"])
-            match_filter = gr.Radio(choices=[f[0] for f in MATCH_FILTERS], value=MATCH_FILTERS[0][0], label="Filter by", interactive=True)
-            match_out = gr.HTML(render_status("Click Refresh to load match reactions", is_loading=False))
-
-            match_btn.click(fn=refresh_match, inputs=[], outputs=[match_out, match_filter])
-            match_filter.change(fn=filter_match, inputs=[match_filter], outputs=[match_out])
-
-    gr.HTML("""
-    <div style="text-align:center;padding:20px 16px;color:#555;font-size:11px;font-family:-apple-system,sans-serif;border-top:1px solid rgba(255,255,255,0.06);margin-top:8px;">
-      &copy; 2026 gaamaa &nbsp;·&nbsp; Powered by Claude AI &nbsp;·&nbsp; World Cup 2026
-    </div>""")
-
-    # Auto-load stories on first visit
+    story_btn.click(fn=refresh_stories, inputs=[], outputs=[story_out, story_filter])
+    story_filter.change(fn=filter_stories, inputs=[story_filter], outputs=[story_out])
     demo.load(fn=auto_load_stories, inputs=[], outputs=[story_out])
 
 
