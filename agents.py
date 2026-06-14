@@ -46,25 +46,37 @@ def curate_and_tag(raw_items: list[dict], mode: str = "stories") -> list[dict]:
 
     prompt = f"""You are curating Reddit posts about World Cup 2026 visitors experiencing the USA.
 
-Here are {len(summaries)} raw search results. Your job:
-1. Filter to only Reddit posts (reddit.com URLs) that are genuinely about real people's reactions, visitor experiences, fan emotions, funny/heartwarming moments, match reactions, or cultural observations. Remove duplicates and irrelevant results.
-2. Ensure VARIETY: max 3 items per category, and try to include different countries/nationalities.
-3. For each kept item, assign:
-   - category: one of [funny, heartwarming, food, culture, stadium, match, other]
-   - caption: one witty/warm sentence (max 120 chars) as if you're a clever sports journalist
-   - country_guess: guess the fan's country if possible from context, else null
-   - flag: emoji flag if country known, else "🌍"
-   - has_direct_link: true (all Reddit posts are direct links)
+Here are {len(summaries)} raw search results.
 
-Mode: {"fan stories — focus on visitor experiences, culture shock, kindness, humor" if mode == "stories" else "match buzz — focus on win/loss reactions, goals, upsets, emotional fan moments"}
+STRICT RULES — only keep a post if ALL of these are true:
+- It's a reddit.com URL
+- Someone is sharing an actual personal experience, story, moment, or observation — something that HAPPENED to them or that they SAW
+- It contains real content (not just a title asking a question like "what do you think?" or "anyone else notice X?")
+- It's about a visitor/fan actually being in the USA for the World Cup — attending games, exploring cities, meeting locals, trying food, reacting to something
+
+REJECT if any of these apply:
+- Post is asking others for opinions, recommendations, or feedback ("what's your honest feedback?", "what should I visit?")
+- Post is a news article headline or generic summary
+- Post is a poll, survey, or discussion prompt
+- Post has no actual story or experience shared in the body/title
+- Post is not clearly World Cup 2026 related
+
+For each KEPT post:
+- category: one of [funny, heartwarming, food, culture, stadium, match, other]
+- caption: one punchy sentence (max 120 chars) describing what actually happened, written like a sports journalist
+- country_guess: the visitor's home country if inferable, else null
+- flag: emoji flag if country known, else "🌍"
+- has_direct_link: true
+
+Ensure VARIETY: max 3 per category, diverse countries.
+
+Mode: {"fan stories — visitor experiences, culture shock, kindness, humor, food reactions" if mode == "stories" else "match buzz — win/loss reactions, goals, upsets, emotional fan moments at games"}
 
 Raw results:
 {chr(10).join(summaries)}
 
-Respond with ONLY a JSON array (max 15 items, varied categories and countries), each object having keys:
-index, category, caption, country_guess, flag, has_direct_link
-
-Example: [{{"index": 0, "category": "funny", "caption": "Ranch dressing claims another international victim.", "country_guess": "Japan", "flag": "🇯🇵", "has_direct_link": true}}]"""
+Respond with ONLY a JSON array (max 15 items). Keys: index, category, caption, country_guess, flag, has_direct_link
+Example: [{{"index": 0, "category": "funny", "caption": "Brazilian fan discovers that a 'small' US coffee is medically inadvisable.", "country_guess": "Brazil", "flag": "🇧🇷", "has_direct_link": true}}]"""
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
