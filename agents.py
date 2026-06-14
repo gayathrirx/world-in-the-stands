@@ -49,12 +49,12 @@ def curate_and_tag(raw_items: list[dict], mode: str = "stories") -> list[dict]:
         text = f"{item.get('title', '')} {item.get('body', '')}".strip()[:300]
         summaries.append(f"[{i}] url={item.get('url','')} | {text}")
 
-    prompt = f"""You are curating Reddit posts about World Cup 2026 visitors experiencing the USA.
+    prompt = f"""You are curating social media posts about World Cup 2026 visitors experiencing the USA.
 
 Here are {len(summaries)} raw search results.
 
 STRICT RULES — only keep a post if ALL of these are true:
-- It's a reddit.com URL
+- URL is from reddit.com, twitter.com, x.com, instagram.com, or facebook.com
 - Someone is sharing an actual personal experience, story, moment, or observation — something that HAPPENED to them or that they SAW
 - It contains real content (not just a title asking a question like "what do you think?" or "anyone else notice X?")
 - It's about a visitor/fan actually being in the USA for the World Cup — attending games, exploring cities, meeting locals, trying food, reacting to something
