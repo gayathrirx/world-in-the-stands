@@ -44,8 +44,31 @@ def curate_and_tag(raw_items: list[dict], mode: str = "stories") -> list[dict]:
     if not raw_items:
         return []
 
+    # Balance sources so Claude sees a mix — don't let Reddit crowd out other platforms
+    from collections import defaultdict
+    buckets = defaultdict(list)
+    for item in raw_items:
+        src = item.get("source", "web")
+        buckets[src].append(item)
+
+    balanced = []
+    per_source = max(8, 40 // max(len(buckets), 1))
+    for src in ["reddit", "twitter", "instagram", "facebook"]:
+        balanced.extend(buckets[src][:per_source])
+    # fill remaining slots with whatever's left
+    seen_urls = {i["url"] for i in balanced}
+    for item in raw_items:
+        if len(balanced) >= 60:
+            break
+        if item["url"] not in seen_urls:
+            balanced.append(item)
+            seen_urls.add(item["url"])
+
+    print(f"Curator input: {len(balanced)} items — " +
+          ", ".join(f"{s}:{len(buckets[s])}" for s in ['reddit','twitter','instagram','facebook']))
+
     summaries = []
-    for i, item in enumerate(raw_items[:40]):
+    for i, item in enumerate(balanced[:60]):
         text = f"{item.get('title', '')} {item.get('body', '')}".strip()[:300]
         summaries.append(f"[{i}] url={item.get('url','')} | {text}")
 
@@ -80,7 +103,7 @@ Mode: {"fan stories — visitor experiences, culture shock, kindness, humor, foo
 Raw results:
 {chr(10).join(summaries)}
 
-Respond with ONLY a JSON array (max 15 items). Keys: index, category, caption, country_guess, flag, has_direct_link
+Respond with ONLY a JSON array (max 20 items, aim for mix across all 4 platforms). Keys: index, category, caption, country_guess, flag, has_direct_link
 Example: [{{"index": 0, "category": "funny", "caption": "Brazilian fan discovers that a 'small' US coffee is medically inadvisable.", "country_guess": "Brazil", "flag": "🇧🇷", "has_direct_link": true}}]"""
 
     response = client.messages.create(
