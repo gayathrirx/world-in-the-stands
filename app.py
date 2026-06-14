@@ -152,25 +152,6 @@ FILTER_BAR_JS = """
     {chips}
   </div>
 </div>
-<script>
-(function() {{
-  function setChip(val) {{
-    document.querySelectorAll('#filter-chips .chip').forEach(function(c) {{
-      c.classList.toggle('active', c.dataset.val === val);
-    }});
-    var tb = document.querySelector('.filter-state textarea');
-    if (tb) {{
-      var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
-      nativeInputValueSetter.call(tb, val);
-      tb.dispatchEvent(new Event('input', {{ bubbles: true }}));
-    }}
-  }}
-  document.getElementById('filter-chips').addEventListener('click', function(e) {{
-    var chip = e.target.closest('.chip');
-    if (chip) setChip(chip.dataset.val);
-  }});
-}})();
-</script>
 """
 
 
@@ -182,7 +163,24 @@ def _filter_bar_html(active="all"):
     return FILTER_BAR_JS.format(chips=chips)
 
 
-with gr.Blocks(title="World In The Stands") as demo:
+_head = """
+<script>
+document.addEventListener('click', function(e) {
+  var chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+  chip.classList.add('active');
+  var tb = document.querySelector('.filter-state textarea');
+  if (tb) {
+    var setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+    setter.call(tb, chip.dataset.val);
+    tb.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
+</script>
+"""
+
+with gr.Blocks(title="World In The Stands", head=_head) as demo:
 
     gr.HTML(HEADER_HTML)
 
