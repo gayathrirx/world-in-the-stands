@@ -33,23 +33,32 @@ def _extract_domain(url: str) -> str:
         return ""
 
 
+import re as _re
+
+def _clean_title(t: str) -> str:
+    return _re.sub(r'\s*[-|]\s*(Reddit|r/\w+)\s*$', '', t, flags=_re.IGNORECASE).strip()
+
+
 def render_card(item: dict) -> str:
     cat = item["category"]
     url = item.get("url", "#")
-    title = item.get("title", "")
+    title = _clean_title(item.get("title", ""))
     body = item.get("body", "")
+    caption = item.get("caption", "")
     flag = item.get("flag", "🌍")
     author = item.get("author", "")
     src_key = item.get("source_key", "web")
     pm = PLATFORM_META.get(src_key, {"color": "#888", "bg": "rgba(100,100,100,0.08)", "icon": "", "label": src_key})
 
-    display_text = title if title else body
-    if len(display_text) > 280:
-        display_text = display_text[:277] + "..."
+    snippet = body if body else title
+    if len(snippet) > 180:
+        snippet = snippet[:177] + "..."
 
     score = item.get("score")
     author_line = f"u/{author}" if src_key == "reddit" and author else ("@" + author if author else "")
-    domain = _extract_domain(url)
+    footer_parts = [p for p in [author_line, f"↑ {score}" if score else ""] if p]
+    footer = " · ".join(footer_parts)
+
     return f"""
 <a href="{url}" target="_blank" class="card-link">
 <div class="card cat-{cat['css']}">
@@ -60,10 +69,10 @@ def render_card(item: dict) -> str:
       <span class="platform-icon">{pm['icon']}</span>
       <span class="cat-badge badge-{cat['css']}">{cat['label']}</span>
     </div>
+    {f'<p class="card-caption">{caption}</p>' if caption else ''}
     <div class="embed-preview" style="border-color:{pm['color']}20;background:{pm['bg']};">
-      <p class="embed-text">{display_text}</p>
-      {f'<div class="embed-author">{author_line}</div>' if author_line else ''}
-      {f'<div class="embed-score">↑ {score}</div>' if score else ''}
+      <p class="embed-text">{snippet}</p>
+      {f'<div class="embed-footer">{footer}</div>' if footer else ''}
     </div>
   </div>
 </div>
@@ -131,10 +140,10 @@ STYLES = """
 .badge-stadium      { background: rgba(67,233,123,0.15);  color: #43e97b; }
 .badge-other        { background: rgba(161,140,209,0.15); color: #a18cd1; }
 
-.embed-preview { border: 1px solid; border-radius: 12px; padding: 12px 14px; }
-.embed-text { font-size: 14px; line-height: 1.55; color: var(--text); margin: 0 0 4px; }
-.embed-author { font-size: 11px; color: #777; margin-top: 4px; }
-.embed-score { font-size: 11px; color: #888; margin-top: 4px; }
+.card-caption { font-size: 14px; font-weight: 600; color: #e8e8e8; line-height: 1.45; margin-bottom: 10px; }
+.embed-preview { border: 1px solid; border-radius: 12px; padding: 10px 12px; }
+.embed-text { font-size: 13px; line-height: 1.5; color: #aaa; margin: 0 0 6px; }
+.embed-footer { font-size: 11px; color: #666; margin-top: 2px; }
 
 .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 15px; font-family: -apple-system, sans-serif; }
 </style>
