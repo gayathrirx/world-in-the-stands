@@ -71,7 +71,6 @@ FOOTER_HTML = """
     <span style="background:rgba(29,155,240,0.15);color:#5bb8f5;padding:2px 10px;border-radius:20px;font-weight:600;">X / Twitter</span>
     <span style="background:rgba(225,48,108,0.15);color:#e1306c;padding:2px 10px;border-radius:20px;font-weight:600;">Instagram</span>
     <span style="background:rgba(24,119,242,0.15);color:#4a90e2;padding:2px 10px;border-radius:20px;font-weight:600;">Facebook</span>
-    <span style="color:#666;">· click any card to open</span>
   </div>
   &copy; 2026 gaamaa &nbsp;·&nbsp; Powered by Claude AI &nbsp;·&nbsp; World In The Stands
 </div>"""
