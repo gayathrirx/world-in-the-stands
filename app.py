@@ -96,6 +96,7 @@ def auto_load_stories():
 
 def refresh_stories():
     global stories_cache, last_stories_refresh
+    # only enforce cooldown if we already have stories to show
     if stories_cache and (time.time() - last_stories_refresh) < REFRESH_COOLDOWN:
         mins = _mins_until_next(last_stories_refresh)
         yield render_status(f"Come back in {mins} min — the AI is on a budget (tokens aren't free, people!)", is_loading=False) + render_feed(stories_cache, "all"), _filter_bar_html("all")

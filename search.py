@@ -1,27 +1,34 @@
 from ddgs import DDGS
 
-# Recent text searches (timelimit="w" = last 7 days)
-TEXT_QUERIES = [
-    "world cup 2026 fan USA experience reddit",
-    "world cup 2026 visiting supporter america funny reddit",
-    "world cup 2026 international fan USA kindness heartwarming reddit",
-    "world cup 2026 tourist america food culture shock reddit",
-    "world cup 2026 fan stadium USA atmosphere reddit",
-    "world cup 2026 visitor america personal story twitter",
-    "world cup 2026 fan USA instagram",
-    "world cup 2026 visiting fan america facebook",
+# Reddit — broad, no time limit so we get enough results
+REDDIT_QUERIES = [
+    "world cup 2026 visiting fan USA experience reddit",
+    "world cup 2026 foreign fan america surprised funny reddit",
+    "world cup 2026 international fan USA food culture shock reddit",
+    "world cup 2026 fan stadium america atmosphere reddit",
+    "world cup 2026 tourist USA kindness heartwarming reddit",
+    "world cup 2026 visitor america personal story reddit",
+    "world cup 2026 fan USA first time america reddit",
+    "site:reddit.com world cup 2026 fan USA experience",
 ]
 
-# News queries — real-time, surfaces viral/trending posts today
-NEWS_QUERIES = [
-    "world cup 2026 fan USA viral moment",
-    "world cup 2026 international visitor america experience",
-    "world cup 2026 foreign fan reaction USA",
-    "world cup 2026 fan story america heartwarming funny",
-    "world cup 2026 visitor USA culture shock",
-    "world cup 2026 fan america stadium atmosphere",
-    "world cup 2026 tourist houston dallas los angeles",
-    "world cup 2026 fan USA food reaction",
+# X / Twitter
+TWITTER_QUERIES = [
+    "world cup 2026 fan USA experience site:x.com",
+    "world cup 2026 visitor america funny site:twitter.com",
+    "world cup 2026 international fan america reaction twitter",
+]
+
+# Instagram
+INSTAGRAM_QUERIES = [
+    "world cup 2026 fan USA experience site:instagram.com",
+    "world cup 2026 visiting supporter america instagram",
+]
+
+# Facebook
+FACEBOOK_QUERIES = [
+    "world cup 2026 fan USA story site:facebook.com",
+    "world cup 2026 visitor america moment facebook",
 ]
 
 
@@ -40,27 +47,15 @@ def _classify_url(url: str) -> str:
     return "web"
 
 
-def _text_search(query: str, max_results: int = 8) -> list[dict]:
+def _text_search(query: str, max_results: int = 10) -> list[dict]:
     try:
         with DDGS() as ddgs:
             return [
                 {"title": r.get("title", ""), "body": r.get("body", ""), "url": r.get("href", ""), "source": _classify_url(r.get("href", ""))}
-                for r in ddgs.text(query, max_results=max_results, timelimit="w")
+                for r in ddgs.text(query, max_results=max_results)
             ]
     except Exception as e:
-        print(f"Text search error: {e}")
-        return []
-
-
-def _news_search(query: str, max_results: int = 8) -> list[dict]:
-    try:
-        with DDGS() as ddgs:
-            return [
-                {"title": r.get("title", ""), "body": r.get("body", ""), "url": r.get("url", ""), "source": _classify_url(r.get("url", ""))}
-                for r in ddgs.news(query, max_results=max_results, timelimit="w")
-            ]
-    except Exception as e:
-        print(f"News search error: {e}")
+        print(f"Text search error [{query[:40]}]: {e}")
         return []
 
 
@@ -75,21 +70,20 @@ def fetch_all_stories() -> list[dict]:
                 seen.add(url)
                 results.append(item)
 
-    for q in NEWS_QUERIES:
-        _add(_news_search(q, max_results=10))
+    all_queries = REDDIT_QUERIES + TWITTER_QUERIES + INSTAGRAM_QUERIES + FACEBOOK_QUERIES
+    for q in all_queries:
+        _add(_text_search(q, max_results=10))
 
-    for q in TEXT_QUERIES:
-        _add(_text_search(q, max_results=8))
-
-    print(f"Fetched {len(results)} raw results")
+    social = [r for r in results if r["source"] in {"reddit", "twitter", "instagram", "facebook"}]
+    print(f"Fetched {len(results)} raw results, {len(social)} social")
     return results
 
 
 def fetch_match_buzz() -> list[dict]:
     seen = set()
     results = []
-    for q in ["world cup 2026 match result fan reaction", "world cup 2026 goal upset fans today"]:
-        for item in _news_search(q, max_results=10):
+    for q in ["world cup 2026 match fan reaction reddit", "world cup 2026 goal celebration reddit"]:
+        for item in _text_search(q, max_results=10):
             if item["url"] not in seen:
                 seen.add(item["url"])
                 results.append(item)
