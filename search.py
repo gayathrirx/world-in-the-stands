@@ -1,22 +1,23 @@
 from ddgs import DDGS
 
 WEB_QUERIES = [
-    "world cup 2026 visitors USA funny experience site:reddit.com",
-    "world cup 2026 fans america heartwarming moment site:reddit.com",
-    "foreign fans american food culture shock world cup site:reddit.com",
-    "world cup 2026 international visitors kindness USA site:reddit.com",
-    "world cup 2026 visitors USA experience site:x.com OR site:twitter.com",
-    "world cup 2026 fans surprised america first time site:x.com OR site:twitter.com",
-    "world cup fans america funny cultural difference site:reddit.com",
-    "world cup 2026 visiting fans USA instagram.com OR facebook.com",
+    "world cup 2026 visitors USA funny experience reddit",
+    "world cup 2026 fans america heartwarming moment reddit",
+    "foreign fans american food culture shock world cup 2026 reddit",
+    "world cup 2026 international visitors kindness USA reddit",
+    "world cup 2026 fans surprised america first time reddit",
+    "world cup 2026 visitors enjoying USA stadium reddit",
+    "world cup 2026 visiting fans generous americans reddit",
+    "world cup 2026 fans america funny cultural moment twitter",
+    "world cup 2026 visitor USA experience twitter reaction",
 ]
 
 MATCH_QUERIES = [
-    "world cup 2026 match result upset fan reaction site:reddit.com",
-    "world cup 2026 goal celebration fans emotion site:x.com OR site:twitter.com",
-    "world cup 2026 loss heartbreak reaction site:reddit.com",
-    "world cup 2026 match score fan discussion site:reddit.com",
-    "world cup 2026 stadium atmosphere fans site:x.com OR site:twitter.com",
+    "world cup 2026 match result upset fan reaction reddit",
+    "world cup 2026 goal celebration fans emotion reddit",
+    "world cup 2026 loss heartbreak fan reaction reddit",
+    "world cup 2026 match fan reaction twitter",
+    "world cup 2026 stadium atmosphere fans experience reddit",
 ]
 
 
@@ -42,6 +43,10 @@ def _classify_url(url: str) -> str:
         return "reddit"
     if "twitter.com" in url or "x.com" in url:
         return "twitter"
+    if "instagram.com" in url:
+        return "instagram"
+    if "facebook.com" in url or "fb.com" in url:
+        return "facebook"
     news = ["bbc", "cnn", "guardian", "espn", "goal.com", "nytimes", "reuters", "ap.org", "fifa", "cbssports", "nbcsports"]
     if any(d in url for d in news):
         return "news"
