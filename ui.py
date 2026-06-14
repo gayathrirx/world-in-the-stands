@@ -50,8 +50,6 @@ def render_card(item: dict) -> str:
     score = item.get("score")
     author_line = f"u/{author}" if src_key == "reddit" and author else ("@" + author if author else "")
     domain = _extract_domain(url)
-    platform_byline = f"{pm['label']} · {domain}" if domain else pm['label']
-
     return f"""
 <a href="{url}" target="_blank" class="card-link">
 <div class="card cat-{cat['css']}">
@@ -59,10 +57,7 @@ def render_card(item: dict) -> str:
   <div class="card-inner">
     <div class="card-header">
       <span class="flag">{flag}</span>
-      <div class="platform-meta">
-        {pm['icon']}
-        <span style="color:{pm['color']};font-weight:700;font-size:12px;">{platform_byline}</span>
-      </div>
+      <span class="platform-icon">{pm['icon']}</span>
       <span class="cat-badge badge-{cat['css']}">{cat['label']}</span>
     </div>
     <div class="embed-preview" style="border-color:{pm['color']}20;background:{pm['bg']};">
@@ -79,12 +74,18 @@ def render_feed(items: list[dict], active_filter: str = "all") -> str:
     if not items:
         return '<div class="empty-state">No stories yet — hit Refresh to find some!</div>'
 
-    seen_urls = set()
+    seen_keys = set()
     social = []
     for i in items:
         url = i.get("url", "")
-        if i.get("source_key") in SOCIAL_SOURCES and url not in seen_urls:
-            seen_urls.add(url)
+        title = i.get("title", "")
+        # dedup by URL and by normalized title (catches same post via different URL variants)
+        title_key = "".join(c.lower() for c in title if c.isalnum())[:60]
+        key = title_key or url
+        if i.get("source_key") in SOCIAL_SOURCES and key not in seen_keys:
+            seen_keys.add(key)
+            if url:
+                seen_keys.add(url)
             social.append(i)
 
     filtered = social if active_filter == "all" else [
@@ -120,8 +121,7 @@ STYLES = """
 
 .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .flag { font-size: 22px; line-height: 1; flex-shrink: 0; }
-.platform-meta { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; overflow: hidden; }
-.platform-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.platform-icon { display: flex; align-items: center; flex: 1; }
 
 .cat-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
 .badge-funny        { background: rgba(240,147,251,0.15); color: #f093fb; }

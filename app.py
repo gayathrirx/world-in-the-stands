@@ -131,8 +131,9 @@ footer { display: none !important; }
 .control-row { gap: 8px !important; align-items: center !important; flex-wrap: nowrap !important; }
 .filter-drop { flex: 1 !important; min-width: 0 !important; }
 .filter-drop > label { display: none !important; }
-.filter-drop select { border-radius: 20px !important; font-size: 13px !important; }
-.refresh-btn { white-space: nowrap !important; border-radius: 50px !important; font-size: 13px !important; font-weight: 700 !important; }
+.filter-drop .wrap { min-height: unset !important; }
+.filter-drop select, .filter-drop input { border-radius: 20px !important; font-size: 13px !important; height: 38px !important; padding: 0 12px !important; }
+.refresh-btn { white-space: nowrap !important; border-radius: 50px !important; font-size: 13px !important; font-weight: 700 !important; height: 38px !important; }
 """
 
 with gr.Blocks(title="World In The Stands") as demo:
@@ -140,7 +141,7 @@ with gr.Blocks(title="World In The Stands") as demo:
     gr.HTML(HEADER_HTML)
 
     with gr.Row(elem_classes=["control-row"]):
-        story_filter = gr.Dropdown(choices=[f[0] for f in FILTERS], value=FILTERS[0][0], label="Filter", interactive=True, elem_classes=["filter-drop"])
+        story_filter = gr.Dropdown(choices=[f[0] for f in FILTERS], value=FILTERS[0][0], label="Filter", show_label=False, interactive=True, elem_classes=["filter-drop"])
         story_btn = gr.Button("↻ Refresh", variant="primary", size="sm", elem_classes=["refresh-btn"])
 
     story_out = gr.HTML(render_status("Loading stories...", is_loading=True))
