@@ -1,15 +1,15 @@
 from ddgs import DDGS
 
 WEB_QUERIES = [
-    "world cup 2026 visitors USA funny experience reddit",
-    "world cup 2026 fans america heartwarming moment reddit",
-    "foreign fans american food culture shock world cup 2026 reddit",
-    "world cup 2026 international visitors kindness USA reddit",
-    "world cup 2026 fans surprised america first time reddit",
-    "world cup 2026 visitors enjoying USA stadium reddit",
-    "world cup 2026 visiting fans generous americans reddit",
-    "world cup 2026 fans america funny cultural moment twitter",
-    "world cup 2026 visitor USA experience twitter reaction",
+    "world cup 2026 visiting fan USA personal experience reddit",
+    "world cup 2026 foreign fan america first time surprised reddit",
+    "world cup 2026 fan USA food reaction funny reddit",
+    "world cup 2026 international fan american kindness heartwarming reddit",
+    "world cup 2026 tourist USA culture shock observation reddit",
+    "world cup 2026 fan stadium USA atmosphere experience reddit",
+    "world cup 2026 visitor america personal story twitter",
+    "world cup 2026 fan america funny observation twitter",
+    "world cup 2026 visiting supporter USA moment instagram",
 ]
 
 MATCH_QUERIES = [

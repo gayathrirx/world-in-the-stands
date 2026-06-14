@@ -1,15 +1,39 @@
 import gradio as gr
 import os
 import time
+import json
+from pathlib import Path
 from agents import run_stories_pipeline, run_match_pipeline
 from ui import render_feed, STYLES, render_status
 
+STORIES_CACHE_FILE = Path("stories_cache.json")
+MATCH_CACHE_FILE   = Path("match_cache.json")
+REFRESH_COOLDOWN   = 3600  # 1 hour
+
+
+def _save(path: Path, data: list):
+    try:
+        with open(path, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        print(f"Cache save error: {e}")
+
+
+def _load(path: Path) -> list:
+    try:
+        if path.exists():
+            with open(path) as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Cache load error: {e}")
+    return []
+
+
 # ── state ──────────────────────────────────────────────────────────────────
-stories_cache: list[dict] = []
-match_cache: list[dict] = []
-last_stories_refresh: float = 0
-last_match_refresh: float = 0
-REFRESH_COOLDOWN = 3600  # 1 hour in seconds
+stories_cache: list[dict] = _load(STORIES_CACHE_FILE)
+match_cache:   list[dict] = _load(MATCH_CACHE_FILE)
+last_stories_refresh: float = STORIES_CACHE_FILE.stat().st_mtime if STORIES_CACHE_FILE.exists() else 0
+last_match_refresh:   float = MATCH_CACHE_FILE.stat().st_mtime   if MATCH_CACHE_FILE.exists()   else 0
 
 FILTERS = [
     ("All", "all"),
@@ -63,12 +87,14 @@ def _mins_until_next(last: float) -> int:
 
 
 def auto_load_stories():
-    """Runs once on page load if cache is empty."""
+    """On page load: show cached stories instantly, or fetch if none exist."""
     global stories_cache, last_stories_refresh
     if stories_cache:
         return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all")
+    # First ever run — fetch and cache to disk
     stories_cache = run_stories_pipeline()
     last_stories_refresh = time.time()
+    _save(STORIES_CACHE_FILE, stories_cache)
     return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all")
 
 
@@ -85,6 +111,7 @@ def refresh_stories():
 
     stories_cache = run_stories_pipeline()
     last_stories_refresh = time.time()
+    _save(STORIES_CACHE_FILE, stories_cache)
     status = render_status(f"{len(stories_cache)} stories loaded", is_loading=False)
     yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
 
@@ -97,11 +124,12 @@ def refresh_match():
         yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
         return
 
-    status = render_status("Searching Reddit for match reactions...")
+    status = render_status("Searching for match reactions...")
     yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
     match_cache = run_match_pipeline()
     last_match_refresh = time.time()
+    _save(MATCH_CACHE_FILE, match_cache)
     status = render_status(f"{len(match_cache)} match stories loaded", is_loading=False)
     yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
