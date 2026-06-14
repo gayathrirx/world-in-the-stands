@@ -49,11 +49,8 @@ HEADER_HTML = f"""{STYLES}
 
 SOURCE_LEGEND = """
 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-family:-apple-system,sans-serif;">
-  <span style="font-size:11px;color:#888;align-self:center;">Sources:</span>
-  <span style="font-size:11px;background:rgba(255,69,0,0.15);color:#ff6b35;padding:3px 10px;border-radius:20px;font-weight:600;">🟠 Reddit — direct link</span>
-  <span style="font-size:11px;background:rgba(29,155,240,0.15);color:#5bb8f5;padding:3px 10px;border-radius:20px;font-weight:600;">🐦 Twitter/X — direct link</span>
-  <span style="font-size:11px;background:rgba(167,139,250,0.15);color:#a78bfa;padding:3px 10px;border-radius:20px;font-weight:600;">📰 Article — quotes post</span>
-  <span style="font-size:11px;background:rgba(100,100,100,0.15);color:#999;padding:3px 10px;border-radius:20px;font-weight:600;">🔗 Web — via search</span>
+  <span style="font-size:11px;color:#888;align-self:center;">Source:</span>
+  <span style="font-size:11px;background:rgba(255,69,0,0.15);color:#ff6b35;padding:3px 10px;border-radius:20px;font-weight:600;">🟠 Reddit — click card to open post</span>
 </div>"""
 
 
