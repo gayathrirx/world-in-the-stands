@@ -1,11 +1,15 @@
 import gradio as gr
 import os
+import time
 from agents import run_stories_pipeline, run_match_pipeline
 from ui import render_feed, STYLES, render_status
 
 # ── state ──────────────────────────────────────────────────────────────────
 stories_cache: list[dict] = []
 match_cache: list[dict] = []
+last_stories_refresh: float = 0
+last_match_refresh: float = 0
+REFRESH_COOLDOWN = 3600  # 1 hour in seconds
 
 FILTERS = [
     ("🌐 All", "all"),
@@ -57,22 +61,40 @@ def _label_to_key(label: str, filter_list: list) -> str:
     return next((v for l, v in filter_list if l == label), "all")
 
 
+def _mins_until_next(last: float) -> int:
+    return max(0, int((REFRESH_COOLDOWN - (time.time() - last)) / 60) + 1)
+
+
 def refresh_stories():
-    global stories_cache
-    status = render_status("Scout Agent searching web & Reddit for fan stories…")
+    global stories_cache, last_stories_refresh
+    if stories_cache and (time.time() - last_stories_refresh) < REFRESH_COOLDOWN:
+        mins = _mins_until_next(last_stories_refresh)
+        status = render_status(f"⏳ Next refresh available in {mins} min", is_loading=False)
+        yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
+        return
+
+    status = render_status("Scout Agent searching Reddit for fan stories…")
     yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
 
     stories_cache = run_stories_pipeline()
+    last_stories_refresh = time.time()
     status = render_status(f"✅ {len(stories_cache)} stories found", is_loading=False)
     yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
 
 
 def refresh_match():
-    global match_cache
-    status = render_status("Scout Agent searching for match reactions & buzz…")
+    global match_cache, last_match_refresh
+    if match_cache and (time.time() - last_match_refresh) < REFRESH_COOLDOWN:
+        mins = _mins_until_next(last_match_refresh)
+        status = render_status(f"⏳ Next refresh available in {mins} min", is_loading=False)
+        yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
+        return
+
+    status = render_status("Scout Agent searching Reddit for match reactions…")
     yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
     match_cache = run_match_pipeline()
+    last_match_refresh = time.time()
     status = render_status(f"✅ {len(match_cache)} match stories found", is_loading=False)
     yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
@@ -100,6 +122,7 @@ _css = """
 .gradio-container { max-width: 640px !important; margin: 0 auto !important; }
 footer { display: none !important; }
 .tab-nav button { font-size: 14px !important; font-weight: 700 !important; }
+.refresh-btn { border-radius: 50px !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: 0.3px !important; padding: 14px 28px !important; }
 """
 
 with gr.Blocks(title="World In The Stands ⚽") as demo:
@@ -125,9 +148,10 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
                 '<div style="text-align:center;color:#888;padding:40px;font-family:sans-serif;">Hit the button to discover stories ⚽</div>'
             )
             story_btn = gr.Button(
-                "⚡ Find Fan Stories",
+                "↻  Refresh Stories",
                 variant="primary",
                 size="lg",
+                elem_classes=["refresh-btn"],
             )
 
             story_btn.click(
@@ -159,9 +183,10 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
                 '<div style="text-align:center;color:#888;padding:40px;font-family:sans-serif;">Hit the button to see match reactions ⚽</div>'
             )
             match_btn = gr.Button(
-                "⚡ Find Match Reactions",
+                "↻  Refresh Match Buzz",
                 variant="primary",
                 size="lg",
+                elem_classes=["refresh-btn"],
             )
 
             match_btn.click(

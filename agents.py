@@ -44,23 +44,24 @@ def curate_and_tag(raw_items: list[dict], mode: str = "stories") -> list[dict]:
         text = f"{item.get('title', '')} {item.get('body', '')}".strip()[:300]
         summaries.append(f"[{i}] url={item.get('url','')} | {text}")
 
-    prompt = f"""You are curating social media posts about World Cup 2026 visitors experiencing the USA.
+    prompt = f"""You are curating Reddit posts about World Cup 2026 visitors experiencing the USA.
 
 Here are {len(summaries)} raw search results. Your job:
-1. Filter to only items that are genuinely about: real people's reactions, visitor experiences, fan emotions, funny/heartwarming moments, match reactions, or cultural observations. Remove duplicates and irrelevant results.
-2. For each kept item, assign:
+1. Filter to only Reddit posts (reddit.com URLs) that are genuinely about real people's reactions, visitor experiences, fan emotions, funny/heartwarming moments, match reactions, or cultural observations. Remove duplicates and irrelevant results.
+2. Ensure VARIETY: max 3 items per category, and try to include different countries/nationalities.
+3. For each kept item, assign:
    - category: one of [funny, heartwarming, food, culture, stadium, match, other]
    - caption: one witty/warm sentence (max 120 chars) as if you're a clever sports journalist
    - country_guess: guess the fan's country if possible from context, else null
    - flag: emoji flag if country known, else "🌍"
-   - has_direct_link: true if the URL goes directly to a tweet/reddit post, false if it's a news article or search result
+   - has_direct_link: true (all Reddit posts are direct links)
 
 Mode: {"fan stories — focus on visitor experiences, culture shock, kindness, humor" if mode == "stories" else "match buzz — focus on win/loss reactions, goals, upsets, emotional fan moments"}
 
 Raw results:
 {chr(10).join(summaries)}
 
-Respond with ONLY a JSON array (max 20 items), each object having keys:
+Respond with ONLY a JSON array (max 15 items, varied categories and countries), each object having keys:
 index, category, caption, country_guess, flag, has_direct_link
 
 Example: [{{"index": 0, "category": "funny", "caption": "Ranch dressing claims another international victim.", "country_guess": "Japan", "flag": "🇯🇵", "has_direct_link": true}}]"""

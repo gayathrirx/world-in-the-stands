@@ -1,4 +1,4 @@
-SOCIAL_SOURCES = {"reddit", "twitter", "instagram", "facebook"}
+SOCIAL_SOURCES = {"reddit"}
 
 
 def _extract_domain(url: str) -> str:
