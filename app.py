@@ -131,8 +131,10 @@ footer { display: none !important; }
 .control-row { gap: 8px !important; align-items: center !important; flex-wrap: nowrap !important; }
 .filter-drop { flex: 1 !important; min-width: 0 !important; }
 .filter-drop > label { display: none !important; }
-.filter-drop .wrap { min-height: unset !important; }
-.filter-drop select, .filter-drop input { border-radius: 20px !important; font-size: 13px !important; height: 38px !important; padding: 0 12px !important; }
+/* strip outer Gradio container borders/bg */
+.filter-drop > .wrap, .filter-drop .block, .filter-drop .container { background: transparent !important; border: none !important; padding: 0 !important; box-shadow: none !important; }
+/* style the actual select to match the button */
+.filter-drop select { border-radius: 50px !important; font-size: 13px !important; font-weight: 700 !important; height: 38px !important; padding: 0 14px !important; width: 100% !important; border: 2px solid rgba(255,255,255,0.15) !important; background-color: #1a1a2e !important; }
 .refresh-btn { white-space: nowrap !important; border-radius: 50px !important; font-size: 13px !important; font-weight: 700 !important; height: 38px !important; }
 """
 
