@@ -99,7 +99,7 @@ def refresh_stories():
     global stories_cache, last_stories_refresh
     if stories_cache and (time.time() - last_stories_refresh) < REFRESH_COOLDOWN:
         mins = _mins_until_next(last_stories_refresh)
-        yield render_status(f"Next refresh available in {mins} min", is_loading=False) + render_feed(stories_cache, "all"), FILTERS[0][0]
+        yield render_status(f"Come back in {mins} min — the AI is on a budget (tokens aren't free, people!)", is_loading=False) + render_feed(stories_cache, "all"), FILTERS[0][0]
         return
 
     yield render_status("Searching for fan stories...") + render_feed(stories_cache, "all"), FILTERS[0][0]
