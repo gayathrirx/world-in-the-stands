@@ -83,18 +83,27 @@ def render_feed(items: list[dict], active_filter: str = "all") -> str:
     if not items:
         return '<div class="empty-state">No stories yet — hit Refresh to find some!</div>'
 
+    def _src(item):
+        url = item.get("url", "")
+        if "reddit.com" in url: return "reddit"
+        if "twitter.com" in url or "x.com" in url: return "twitter"
+        if "instagram.com" in url: return "instagram"
+        if "facebook.com" in url or "fb.com" in url: return "facebook"
+        return item.get("source_key", "web")
+
     seen_keys = set()
     social = []
     for i in items:
         url = i.get("url", "")
+        src = _src(i)
+        if src not in SOCIAL_SOURCES:
+            continue
         title = i.get("title", "")
-        # dedup by URL and by normalized title (catches same post via different URL variants)
-        title_key = "".join(c.lower() for c in title if c.isalnum())[:60]
-        key = title_key or url
-        if i.get("source_key") in SOCIAL_SOURCES and key not in seen_keys:
+        title_key = "".join(c.lower() for c in title if c.isalnum())[:50]
+        key = title_key if title_key else url
+        if key not in seen_keys and url not in seen_keys:
             seen_keys.add(key)
-            if url:
-                seen_keys.add(url)
+            seen_keys.add(url)
             social.append(i)
 
     filtered = social if active_filter == "all" else [

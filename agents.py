@@ -67,48 +67,49 @@ def curate_and_tag(raw_items: list[dict], mode: str = "stories") -> list[dict]:
     print(f"Curator input: {len(balanced)} items — " +
           ", ".join(f"{s}:{len(buckets[s])}" for s in ['reddit','twitter','instagram','facebook']))
 
+    batch = balanced[:60]
     summaries = []
-    for i, item in enumerate(balanced[:60]):
+    for i, item in enumerate(batch):
         text = f"{item.get('title', '')} {item.get('body', '')}".strip()[:300]
         summaries.append(f"[{i}] url={item.get('url','')} | {text}")
 
-    prompt = f"""You are curating social media posts about World Cup 2026 visitors experiencing the USA.
+    prompt = f"""You are curating social media posts about World Cup 2026 fans and visitors in the USA.
 
-Here are {len(summaries)} raw search results.
+Here are {len(summaries)} raw search results from Reddit, X/Twitter, Instagram, and Facebook.
 
-STRICT RULES — only keep a post if ALL of these are true:
-- URL is from reddit.com, twitter.com, x.com, instagram.com, or facebook.com
-- Someone is sharing an actual personal experience, story, moment, or observation — something that HAPPENED to them or that they SAW
-- It contains real content (not just a title asking a question like "what do you think?" or "anyone else notice X?")
-- It's about a visitor/fan actually being in the USA for the World Cup — attending games, exploring cities, meeting locals, trying food, reacting to something
+KEEP a post if it is about World Cup 2026 fans or visitors in the USA AND the URL is from reddit.com, x.com, twitter.com, instagram.com, or facebook.com.
 
-REJECT if any of these apply:
-- Post is asking others for opinions, recommendations, or feedback ("what's your honest feedback?", "what should I visit?")
-- Post is a news article headline or generic summary
-- Post is a poll, survey, or discussion prompt
-- Post has no actual story or experience shared in the body/title
-- Post is not clearly World Cup 2026 related
+Accept ANY of these:
+- A fan sharing their personal experience visiting the USA for the World Cup
+- Someone reacting to or commenting on fan experiences, culture, food, stadiums, kindness
+- A funny, heartwarming, or surprising moment involving international fans in the USA
+- Fan reactions to games, goals, wins, losses
+- Observations about Americans hosting World Cup fans
 
-For each KEPT post:
-- category: one of [funny, heartwarming, food, culture, stadium, match, other]
-- caption: one punchy sentence (max 120 chars) describing what actually happened, written like a sports journalist
-- country_guess: the visitor's home country if inferable, else null
-- flag: emoji flag if country known, else "🌍"
-- has_direct_link: true
+REJECT only:
+- Pure news articles with no fan voice (e.g. "FIFA announces schedule")
+- Spam or unrelated content
+- URLs not from the 4 social platforms listed above
 
-Ensure VARIETY: max 3 per category, diverse countries.
+Be GENEROUS — if in doubt, keep it. We want 15-20 stories.
 
-Mode: {"fan stories — visitor experiences, culture shock, kindness, humor, food reactions" if mode == "stories" else "match buzz — win/loss reactions, goals, upsets, emotional fan moments at games"}
+For each KEPT post assign:
+- category: funny | heartwarming | food | culture | stadium | other
+- caption: one punchy sentence (max 120 chars) like a sports journalist
+- country_guess: visitor's home country if inferable, else null
+- flag: emoji flag if known, else "🌍"
+
+Aim for variety across platforms and countries. Max 4 per category.
 
 Raw results:
 {chr(10).join(summaries)}
 
-Respond with ONLY a JSON array (max 20 items, aim for mix across all 4 platforms). Keys: index, category, caption, country_guess, flag, has_direct_link
-Example: [{{"index": 0, "category": "funny", "caption": "Brazilian fan discovers that a 'small' US coffee is medically inadvisable.", "country_guess": "Brazil", "flag": "🇧🇷", "has_direct_link": true}}]"""
+Respond with ONLY a JSON array. Keys: index, category, caption, country_guess, flag
+Example: [{{"index": 0, "category": "funny", "caption": "Brazilian fan discovers a US small coffee is medically inadvisable.", "country_guess": "Brazil", "flag": "🇧🇷"}}]"""
 
     response = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=2000,
+        max_tokens=3000,
         messages=[{"role": "user", "content": prompt}],
     )
 
@@ -126,9 +127,9 @@ Example: [{{"index": 0, "category": "funny", "caption": "Brazilian fan discovers
     output = []
     for t in tagged:
         idx = t.get("index", -1)
-        if idx < 0 or idx >= len(raw_items):
+        if idx < 0 or idx >= len(batch):
             continue
-        item = raw_items[idx]
+        item = batch[idx]  # use batch, not raw_items — idx refers to batch position
         src_key = detect_source(item.get("url", ""), item.get("source", "web"))
         cat_key = t.get("category", "other")
         output.append({

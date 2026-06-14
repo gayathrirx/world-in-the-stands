@@ -88,10 +88,12 @@ def auto_load_stories():
     global stories_cache, last_stories_refresh
     if stories_cache:
         return _stories_html()
+    # no cache — fetch in foreground (first cold start)
+    yield render_status("Finding fan stories from around the world...", is_loading=True)
     stories_cache = run_stories_pipeline()
     last_stories_refresh = time.time()
     _save(STORIES_CACHE_FILE, stories_cache)
-    return _stories_html()
+    yield _stories_html()
 
 
 def refresh_stories():
