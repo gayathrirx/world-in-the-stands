@@ -35,7 +35,7 @@ HEADER_HTML = f"""{STYLES}
     World In The Stands
   </h1>
   <p style="color:#aaa;font-size:13px;margin:6px 0 0;">
-    World Cup 2026 · Real fan stories from Reddit
+    World Cup 2026 · Real fan stories from Reddit, X, Instagram & Facebook
   </p>
   <div style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;
     background:rgba(255,60,60,0.15);border:1px solid rgba(255,60,60,0.3);
@@ -66,10 +66,10 @@ def auto_load_stories():
     """Runs once on page load if cache is empty."""
     global stories_cache, last_stories_refresh
     if stories_cache:
-        return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all"), FILTERS[0][0]
+        return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all")
     stories_cache = run_stories_pipeline()
     last_stories_refresh = time.time()
-    return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all"), FILTERS[0][0]
+    return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all")
 
 
 def refresh_stories():
@@ -205,14 +205,14 @@ with gr.Blocks(title="World In The Stands") as demo:
 
     gr.HTML("""
     <div style="text-align:center;padding:20px 16px;color:#555;font-size:11px;font-family:-apple-system,sans-serif;border-top:1px solid rgba(255,255,255,0.06);margin-top:8px;">
-      &copy; 2026 gaamaa &nbsp;·&nbsp; Powered by Claude AI &nbsp;·&nbsp; Stories sourced from Reddit &nbsp;·&nbsp; World Cup 2026
+      &copy; 2026 gaamaa &nbsp;·&nbsp; Powered by Claude AI &nbsp;·&nbsp; World Cup 2026
     </div>""")
 
     # Auto-load stories on first visit
     demo.load(
         fn=auto_load_stories,
         inputs=[],
-        outputs=[story_status, story_feed, story_filter],
+        outputs=[story_status, story_feed],
     )
 
 
