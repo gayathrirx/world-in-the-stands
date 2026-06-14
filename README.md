@@ -9,6 +9,8 @@ python_version: '3.13'
 app_file: app.py
 pinned: false
 short_description: AI-curated World Cup 2026 fan stories from around the globe
+thumbnail: >-
+  https://cdn-uploads.huggingface.co/production/uploads/6672fa6906dcda7c8112e88c/xJ7-2_Q9_TW6DoHopcwIs.png
 ---
 
 # 🌎 World In The Stands ⚽
