@@ -98,15 +98,15 @@ def refresh_stories():
     global stories_cache, last_stories_refresh
     if stories_cache and (time.time() - last_stories_refresh) < REFRESH_COOLDOWN:
         mins = _mins_until_next(last_stories_refresh)
-        yield render_status(f"Come back in {mins} min — the AI is on a budget (tokens aren't free, people!)", is_loading=False) + render_feed(stories_cache, "all"), FILTERS[0][0]
+        yield render_status(f"Come back in {mins} min — the AI is on a budget (tokens aren't free, people!)", is_loading=False) + render_feed(stories_cache, "all"), _filter_bar_html("all")
         return
 
-    yield render_status("Searching for fan stories...") + render_feed(stories_cache, "all"), FILTERS[0][0]
+    yield render_status("Searching for fan stories...") + render_feed(stories_cache, "all"), _filter_bar_html("all")
 
     stories_cache = run_stories_pipeline()
     last_stories_refresh = time.time()
     _save(STORIES_CACHE_FILE, stories_cache)
-    yield _stories_html(), FILTERS[0][0]
+    yield _stories_html(), _filter_bar_html("all")
 
 
 def filter_stories(active_filter: str):
@@ -128,42 +128,75 @@ _theme = gr.themes.Base(
 _css = """
 .gradio-container { max-width: 640px !important; margin: 0 auto !important; }
 footer { display: none !important; }
-.control-row { gap: 8px !important; align-items: center !important; flex-wrap: nowrap !important; }
-.filter-drop { flex: 1 !important; min-width: 0 !important; }
-.filter-drop > label { display: none !important; }
-/* strip all outer wrappers */
-.filter-drop > div { background: transparent !important; border: none !important; padding: 0 !important; box-shadow: none !important; }
-/* the actual clickable pill — Gradio renders .wrap as the visible dropdown box */
-.filter-drop .wrap {
-  border-radius: 50px !important;
-  border: 2px solid rgba(255,255,255,0.2) !important;
-  background: #1a1a2e !important;
-  height: 38px !important;
-  min-height: unset !important;
-  padding: 0 14px !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  box-shadow: none !important;
-  align-items: center !important;
+/* hide the hidden textbox */
+.filter-state { display: none !important; }
+/* control bar */
+.ctrl-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 0 2px; }
+.filter-chips { display: flex; gap: 6px; overflow-x: auto; flex: 1; scrollbar-width: none; }
+.filter-chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0; cursor: pointer; border: 2px solid rgba(255,255,255,0.18);
+  background: transparent; color: #bbb; border-radius: 50px;
+  padding: 0 16px; height: 38px; font-size: 13px; font-weight: 700;
+  font-family: -apple-system, sans-serif; white-space: nowrap; transition: all 0.15s;
 }
-.filter-drop .wrap * { font-size: 13px !important; font-weight: 700 !important; }
-.refresh-btn { white-space: nowrap !important; border-radius: 50px !important; font-size: 13px !important; font-weight: 700 !important; height: 38px !important; }
+.chip:hover { border-color: rgba(255,255,255,0.35); color: #fff; }
+.chip.active { background: #e8b84b; border-color: #e8b84b; color: #000; }
+.refresh-btn { flex-shrink: 0; border-radius: 50px !important; font-size: 13px !important; font-weight: 700 !important; height: 38px !important; white-space: nowrap !important; min-width: unset !important; padding: 0 18px !important; }
 """
+
+FILTER_BAR_JS = """
+<div class="ctrl-bar">
+  <div class="filter-chips" id="filter-chips">
+    {chips}
+  </div>
+</div>
+<script>
+(function() {{
+  function setChip(val) {{
+    document.querySelectorAll('#filter-chips .chip').forEach(function(c) {{
+      c.classList.toggle('active', c.dataset.val === val);
+    }});
+    var tb = document.querySelector('.filter-state textarea');
+    if (tb) {{
+      var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+      nativeInputValueSetter.call(tb, val);
+      tb.dispatchEvent(new Event('input', {{ bubbles: true }}));
+    }}
+  }}
+  document.getElementById('filter-chips').addEventListener('click', function(e) {{
+    var chip = e.target.closest('.chip');
+    if (chip) setChip(chip.dataset.val);
+  }});
+}})();
+</script>
+"""
+
+
+def _filter_bar_html(active="all"):
+    chips = "".join(
+        f'<button class="chip{" active" if v == active else ""}" data-val="{v}">{l}</button>'
+        for l, v in FILTERS
+    )
+    return FILTER_BAR_JS.format(chips=chips)
+
 
 with gr.Blocks(title="World In The Stands") as demo:
 
     gr.HTML(HEADER_HTML)
 
-    with gr.Row(elem_classes=["control-row"]):
-        story_filter = gr.Dropdown(choices=[f[0] for f in FILTERS], value=FILTERS[0][0], label="Filter", show_label=False, interactive=True, elem_classes=["filter-drop"])
+    filter_bar = gr.HTML(_filter_bar_html("all"))
+    filter_state = gr.Textbox(value="all", visible=False, elem_classes=["filter-state"])
+
+    with gr.Row():
         story_btn = gr.Button("↻ Refresh", variant="primary", size="sm", elem_classes=["refresh-btn"])
 
     story_out = gr.HTML(render_status("Loading stories...", is_loading=True))
 
     gr.HTML(FOOTER_HTML)
 
-    story_btn.click(fn=refresh_stories, inputs=[], outputs=[story_out, story_filter])
-    story_filter.change(fn=filter_stories, inputs=[story_filter], outputs=[story_out])
+    story_btn.click(fn=refresh_stories, inputs=[], outputs=[story_out, filter_bar])
+    filter_state.change(fn=lambda v: _stories_html(v), inputs=[filter_state], outputs=[story_out])
     demo.load(fn=auto_load_stories, inputs=[], outputs=[story_out])
 
 
