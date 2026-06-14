@@ -33,12 +33,8 @@ def render_card(item: dict) -> str:
     domain = _extract_domain(url)
     domain_html = f'<span class="domain-note">{domain}</span>' if domain else ""
 
-    if src_key in SOCIAL_SOURCES:
-        link_html = f'<a href="{url}" target="_blank" class="view-link">View Post →</a>'
-    else:
-        link_html = ""
-
     return f"""
+<a href="{url}" target="_blank" class="card-link">
 <div class="card cat-{cat['css']} src-{src_key}">
   <div class="card-top-bar"></div>
   <div class="card-inner">
@@ -59,19 +55,23 @@ def render_card(item: dict) -> str:
       <div class="footer-right">
         {domain_html}
         {score_html}
-        {link_html}
+        <span class="view-link">View Post →</span>
       </div>
     </div>
   </div>
-</div>"""
+</div>
+</a>"""
 
 
 def render_feed(items: list[dict], active_filter: str = "all") -> str:
     if not items:
         return '<div class="empty-state">🔍 No stories yet — hit the button to find some!</div>'
 
-    filtered = items if active_filter == "all" else [
-        i for i in items if i["category_key"] == active_filter
+    # Only show cards from social platforms
+    social = [i for i in items if i.get("source_key") in SOCIAL_SOURCES]
+
+    filtered = social if active_filter == "all" else [
+        i for i in social if i["category_key"] == active_filter
     ]
 
     if not filtered:
@@ -93,6 +93,9 @@ STYLES = """
 }
 
 .feed { display: flex; flex-direction: column; gap: 14px; padding: 4px 0; }
+
+.card-link { text-decoration: none; display: block; }
+.card-link:hover .card { border-color: rgba(232,184,75,0.4); transform: translateY(-1px); transition: all 0.15s; }
 
 .card {
   background: var(--card-bg);
