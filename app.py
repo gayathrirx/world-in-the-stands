@@ -86,60 +86,61 @@ def _mins_until_next(last: float) -> int:
     return max(0, int((REFRESH_COOLDOWN - (time.time() - last)) / 60) + 1)
 
 
+def _stories_html(filter_key="all"):
+    return render_status(f"{len(stories_cache)} stories loaded", is_loading=False) + render_feed(stories_cache, filter_key)
+
+def _match_html(filter_key="all"):
+    return render_status(f"{len(match_cache)} match stories loaded", is_loading=False) + render_feed(match_cache, filter_key)
+
+
 def auto_load_stories():
-    """On page load: show cached stories instantly, or fetch if none exist."""
     global stories_cache, last_stories_refresh
     if stories_cache:
-        return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all")
-    # First ever run — fetch and cache to disk
+        return _stories_html()
     stories_cache = run_stories_pipeline()
     last_stories_refresh = time.time()
     _save(STORIES_CACHE_FILE, stories_cache)
-    return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all")
+    return _stories_html()
 
 
 def refresh_stories():
     global stories_cache, last_stories_refresh
     if stories_cache and (time.time() - last_stories_refresh) < REFRESH_COOLDOWN:
         mins = _mins_until_next(last_stories_refresh)
-        status = render_status(f"Next refresh available in {mins} min", is_loading=False)
-        yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
+        yield render_status(f"Next refresh available in {mins} min", is_loading=False) + render_feed(stories_cache, "all"), FILTERS[0][0]
         return
 
-    status = render_status("Searching Reddit for fan stories...")
-    yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
+    yield render_status("Searching for fan stories...") + render_feed(stories_cache, "all"), FILTERS[0][0]
 
     stories_cache = run_stories_pipeline()
     last_stories_refresh = time.time()
     _save(STORIES_CACHE_FILE, stories_cache)
-    status = render_status(f"{len(stories_cache)} stories loaded", is_loading=False)
-    yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
+    yield _stories_html(), FILTERS[0][0]
 
 
 def refresh_match():
     global match_cache, last_match_refresh
     if match_cache and (time.time() - last_match_refresh) < REFRESH_COOLDOWN:
         mins = _mins_until_next(last_match_refresh)
-        status = render_status(f"Next refresh available in {mins} min", is_loading=False)
-        yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
+        yield render_status(f"Next refresh available in {mins} min", is_loading=False) + render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
         return
 
-    status = render_status("Searching for match reactions...")
-    yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
+    yield render_status("Searching for match reactions...") + render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
     match_cache = run_match_pipeline()
     last_match_refresh = time.time()
     _save(MATCH_CACHE_FILE, match_cache)
-    status = render_status(f"{len(match_cache)} match stories loaded", is_loading=False)
-    yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
+    yield _match_html(), MATCH_FILTERS[0][0]
 
 
 def filter_stories(active_filter: str):
-    return render_feed(stories_cache, active_filter)
+    key = next((v for l, v in FILTERS if l == active_filter), "all")
+    return _stories_html(key)
 
 
 def filter_match(active_filter: str):
-    return render_feed(match_cache, active_filter)
+    key = next((v for l, v in MATCH_FILTERS if l == active_filter), "all")
+    return _match_html(key)
 
 
 # ── UI ─────────────────────────────────────────────────────────────────────
@@ -158,6 +159,7 @@ _css = """
 footer { display: none !important; }
 .tab-nav button { font-size: 14px !important; font-weight: 700 !important; }
 .refresh-btn { border-radius: 50px !important; font-size: 15px !important; font-weight: 800 !important; letter-spacing: 0.3px !important; }
+.tabitem > .block > .label-wrap { display: none !important; }
 """
 
 with gr.Blocks(title="World In The Stands") as demo:
@@ -169,67 +171,20 @@ with gr.Blocks(title="World In The Stands") as demo:
 
         # ── Tab 1: Fan Stories ─────────────────────────────────────────────
         with gr.Tab("Fan Stories"):
-            story_btn = gr.Button(
-                "↻  Refresh Stories",
-                variant="primary",
-                size="lg",
-                elem_classes=["refresh-btn"],
-            )
-            story_status = gr.HTML(
-                render_status("Loading fan stories...", is_loading=True)
-            )
-            story_filter = gr.Radio(
-                choices=[f[0] for f in FILTERS],
-                value=FILTERS[0][0],
-                label="Filter by",
-                interactive=True,
-            )
-            story_feed = gr.HTML()
+            story_btn = gr.Button("↻  Refresh Stories", variant="primary", size="lg", elem_classes=["refresh-btn"])
+            story_filter = gr.Radio(choices=[f[0] for f in FILTERS], value=FILTERS[0][0], label="Filter by", interactive=True)
+            story_out = gr.HTML(render_status("Loading stories...", is_loading=True))
 
-            story_btn.click(
-                fn=refresh_stories,
-                inputs=[],
-                outputs=[story_status, story_feed, story_filter],
-            )
-            story_filter.change(
-                fn=lambda f: filter_stories(
-                    next((v for l, v in FILTERS if l == f), "all")
-                ),
-                inputs=[story_filter],
-                outputs=[story_feed],
-            )
+            story_btn.click(fn=refresh_stories, inputs=[], outputs=[story_out, story_filter])
+            story_filter.change(fn=filter_stories, inputs=[story_filter], outputs=[story_out])
 
-        # ── Tab 2: Match Buzz ──────────────────────────────────────────────
         with gr.Tab("Match Buzz"):
-            match_btn = gr.Button(
-                "↻  Refresh Match Buzz",
-                variant="primary",
-                size="lg",
-                elem_classes=["refresh-btn"],
-            )
-            match_status = gr.HTML(
-                render_status("Click above to load match reactions", is_loading=False)
-            )
-            match_filter = gr.Radio(
-                choices=[f[0] for f in MATCH_FILTERS],
-                value=MATCH_FILTERS[0][0],
-                label="Filter by",
-                interactive=True,
-            )
-            match_feed = gr.HTML()
+            match_btn = gr.Button("↻  Refresh Match Buzz", variant="primary", size="lg", elem_classes=["refresh-btn"])
+            match_filter = gr.Radio(choices=[f[0] for f in MATCH_FILTERS], value=MATCH_FILTERS[0][0], label="Filter by", interactive=True)
+            match_out = gr.HTML(render_status("Click Refresh to load match reactions", is_loading=False))
 
-            match_btn.click(
-                fn=refresh_match,
-                inputs=[],
-                outputs=[match_status, match_feed, match_filter],
-            )
-            match_filter.change(
-                fn=lambda f: filter_match(
-                    next((v for l, v in MATCH_FILTERS if l == f), "all")
-                ),
-                inputs=[match_filter],
-                outputs=[match_feed],
-            )
+            match_btn.click(fn=refresh_match, inputs=[], outputs=[match_out, match_filter])
+            match_filter.change(fn=filter_match, inputs=[match_filter], outputs=[match_out])
 
     gr.HTML("""
     <div style="text-align:center;padding:20px 16px;color:#555;font-size:11px;font-family:-apple-system,sans-serif;border-top:1px solid rgba(255,255,255,0.06);margin-top:8px;">
@@ -237,11 +192,7 @@ with gr.Blocks(title="World In The Stands") as demo:
     </div>""")
 
     # Auto-load stories on first visit
-    demo.load(
-        fn=auto_load_stories,
-        inputs=[],
-        outputs=[story_status, story_feed],
-    )
+    demo.load(fn=auto_load_stories, inputs=[], outputs=[story_out])
 
 
 if __name__ == "__main__":
