@@ -12,19 +12,19 @@ last_match_refresh: float = 0
 REFRESH_COOLDOWN = 3600  # 1 hour in seconds
 
 FILTERS = [
-    ("🌐 All", "all"),
-    ("😂 Funny", "funny"),
-    ("❤️ Heartwarming", "heartwarming"),
-    ("🍔 Food Shock", "food"),
-    ("😲 Culture", "culture"),
-    ("🏟️ Stadium", "stadium"),
+    ("All", "all"),
+    ("Funny", "funny"),
+    ("Heartwarming", "heartwarming"),
+    ("Food Shock", "food"),
+    ("Culture", "culture"),
+    ("Stadium", "stadium"),
 ]
 
 MATCH_FILTERS = [
-    ("🌐 All", "all"),
-    ("🎉 Match Buzz", "match"),
-    ("❤️ Heartwarming", "heartwarming"),
-    ("😂 Funny", "funny"),
+    ("All", "all"),
+    ("Match Buzz", "match"),
+    ("Heartwarming", "heartwarming"),
+    ("Funny", "funny"),
 ]
 
 HEADER_HTML = f"""{STYLES}
@@ -32,10 +32,10 @@ HEADER_HTML = f"""{STYLES}
   background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
   border-radius:12px;margin-bottom:16px;font-family:-apple-system,sans-serif;">
   <h1 style="font-size:26px;font-weight:900;margin:0;color:#fff;letter-spacing:-0.5px;">
-    🌎 World In The Stands ⚽
+    World In The Stands
   </h1>
   <p style="color:#aaa;font-size:13px;margin:6px 0 0;">
-    World Cup 2026 · Real fan stories curated by AI agents
+    World Cup 2026 · Real fan stories from Reddit
   </p>
   <div style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;
     background:rgba(255,60,60,0.15);border:1px solid rgba(255,60,60,0.3);
@@ -50,32 +50,38 @@ HEADER_HTML = f"""{STYLES}
 SOURCE_LEGEND = """
 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-family:-apple-system,sans-serif;">
   <span style="font-size:11px;color:#888;align-self:center;">Source:</span>
-  <span style="font-size:11px;background:rgba(255,69,0,0.15);color:#ff6b35;padding:3px 10px;border-radius:20px;font-weight:600;">🟠 Reddit — click card to open post</span>
+  <span style="font-size:11px;background:rgba(255,69,0,0.15);color:#ff6b35;padding:3px 10px;border-radius:20px;font-weight:600;">Reddit — click any card to open the post</span>
 </div>"""
-
-
-def _label_to_key(label: str, filter_list: list) -> str:
-    return next((v for l, v in filter_list if l == label), "all")
 
 
 def _mins_until_next(last: float) -> int:
     return max(0, int((REFRESH_COOLDOWN - (time.time() - last)) / 60) + 1)
 
 
+def auto_load_stories():
+    """Runs once on page load if cache is empty."""
+    global stories_cache, last_stories_refresh
+    if stories_cache:
+        return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all"), FILTERS[0][0]
+    stories_cache = run_stories_pipeline()
+    last_stories_refresh = time.time()
+    return render_status(f"{len(stories_cache)} stories loaded", is_loading=False), render_feed(stories_cache, "all"), FILTERS[0][0]
+
+
 def refresh_stories():
     global stories_cache, last_stories_refresh
     if stories_cache and (time.time() - last_stories_refresh) < REFRESH_COOLDOWN:
         mins = _mins_until_next(last_stories_refresh)
-        status = render_status(f"⏳ Next refresh available in {mins} min", is_loading=False)
+        status = render_status(f"Next refresh available in {mins} min", is_loading=False)
         yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
         return
 
-    status = render_status("Scout Agent searching Reddit for fan stories…")
+    status = render_status("Searching Reddit for fan stories...")
     yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
 
     stories_cache = run_stories_pipeline()
     last_stories_refresh = time.time()
-    status = render_status(f"✅ {len(stories_cache)} stories found", is_loading=False)
+    status = render_status(f"{len(stories_cache)} stories loaded", is_loading=False)
     yield status, render_feed(stories_cache, "all"), FILTERS[0][0]
 
 
@@ -83,16 +89,16 @@ def refresh_match():
     global match_cache, last_match_refresh
     if match_cache and (time.time() - last_match_refresh) < REFRESH_COOLDOWN:
         mins = _mins_until_next(last_match_refresh)
-        status = render_status(f"⏳ Next refresh available in {mins} min", is_loading=False)
+        status = render_status(f"Next refresh available in {mins} min", is_loading=False)
         yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
         return
 
-    status = render_status("Scout Agent searching Reddit for match reactions…")
+    status = render_status("Searching Reddit for match reactions...")
     yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
     match_cache = run_match_pipeline()
     last_match_refresh = time.time()
-    status = render_status(f"✅ {len(match_cache)} match stories found", is_loading=False)
+    status = render_status(f"{len(match_cache)} match stories loaded", is_loading=False)
     yield status, render_feed(match_cache, "all"), MATCH_FILTERS[0][0]
 
 
@@ -119,10 +125,10 @@ _css = """
 .gradio-container { max-width: 640px !important; margin: 0 auto !important; }
 footer { display: none !important; }
 .tab-nav button { font-size: 14px !important; font-weight: 700 !important; }
-.refresh-btn { border-radius: 50px !important; font-size: 16px !important; font-weight: 800 !important; letter-spacing: 0.3px !important; padding: 14px 28px !important; }
+.refresh-btn { border-radius: 50px !important; font-size: 15px !important; font-weight: 800 !important; letter-spacing: 0.3px !important; }
 """
 
-with gr.Blocks(title="World In The Stands ⚽") as demo:
+with gr.Blocks(title="World In The Stands") as demo:
 
     gr.HTML(HEADER_HTML)
     gr.HTML(SOURCE_LEGEND)
@@ -130,26 +136,23 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
     with gr.Tabs():
 
         # ── Tab 1: Fan Stories ─────────────────────────────────────────────
-        with gr.Tab("🌍 Fan Stories"):
-            with gr.Row():
-                story_filter = gr.Radio(
-                    choices=[f[0] for f in FILTERS],
-                    value=FILTERS[0][0],
-                    label="Filter",
-                    interactive=True,
-                )
-            story_status = gr.HTML(
-                render_status("Click below to load fan stories", is_loading=False)
-            )
-            story_feed = gr.HTML(
-                '<div style="text-align:center;color:#888;padding:40px;font-family:sans-serif;">Hit the button to discover stories ⚽</div>'
-            )
+        with gr.Tab("Fan Stories"):
             story_btn = gr.Button(
                 "↻  Refresh Stories",
                 variant="primary",
                 size="lg",
                 elem_classes=["refresh-btn"],
             )
+            story_status = gr.HTML(
+                render_status("Loading fan stories...", is_loading=True)
+            )
+            story_filter = gr.Radio(
+                choices=[f[0] for f in FILTERS],
+                value=FILTERS[0][0],
+                label="Filter by",
+                interactive=True,
+            )
+            story_feed = gr.HTML()
 
             story_btn.click(
                 fn=refresh_stories,
@@ -165,26 +168,23 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
             )
 
         # ── Tab 2: Match Buzz ──────────────────────────────────────────────
-        with gr.Tab("🎉 Match Buzz"):
-            with gr.Row():
-                match_filter = gr.Radio(
-                    choices=[f[0] for f in MATCH_FILTERS],
-                    value="🌐 All",
-                    label="Filter",
-                    interactive=True,
-                )
-            match_status = gr.HTML(
-                render_status("Click below to load match reactions", is_loading=False)
-            )
-            match_feed = gr.HTML(
-                '<div style="text-align:center;color:#888;padding:40px;font-family:sans-serif;">Hit the button to see match reactions ⚽</div>'
-            )
+        with gr.Tab("Match Buzz"):
             match_btn = gr.Button(
                 "↻  Refresh Match Buzz",
                 variant="primary",
                 size="lg",
                 elem_classes=["refresh-btn"],
             )
+            match_status = gr.HTML(
+                render_status("Click above to load match reactions", is_loading=False)
+            )
+            match_filter = gr.Radio(
+                choices=[f[0] for f in MATCH_FILTERS],
+                value=MATCH_FILTERS[0][0],
+                label="Filter by",
+                interactive=True,
+            )
+            match_feed = gr.HTML()
 
             match_btn.click(
                 fn=refresh_match,
@@ -200,9 +200,16 @@ with gr.Blocks(title="World In The Stands ⚽") as demo:
             )
 
     gr.HTML("""
-    <div style="text-align:center;padding:16px;color:#555;font-size:11px;font-family:sans-serif;">
-      Built with Claude AI · Sources: Reddit & Web Search · World Cup 2026 🏆
+    <div style="text-align:center;padding:20px 16px;color:#555;font-size:11px;font-family:-apple-system,sans-serif;border-top:1px solid rgba(255,255,255,0.06);margin-top:8px;">
+      &copy; 2026 gaamaa &nbsp;·&nbsp; Powered by Claude AI &nbsp;·&nbsp; Stories sourced from Reddit &nbsp;·&nbsp; World Cup 2026
     </div>""")
+
+    # Auto-load stories on first visit
+    demo.load(
+        fn=auto_load_stories,
+        inputs=[],
+        outputs=[story_status, story_feed, story_filter],
+    )
 
 
 if __name__ == "__main__":

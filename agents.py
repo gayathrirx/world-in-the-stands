@@ -6,20 +6,20 @@ from search import fetch_all_stories, fetch_match_buzz
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 CATEGORY_MAP = {
-    "funny": {"label": "😂 Funny", "css": "funny"},
-    "heartwarming": {"label": "❤️ Heartwarming", "css": "heartwarming"},
-    "food": {"label": "🍔 Food Shock", "css": "food"},
-    "culture": {"label": "😲 Culture", "css": "culture"},
-    "stadium": {"label": "🏟️ Stadium", "css": "stadium"},
-    "match": {"label": "🎉 Match Buzz", "css": "match"},
-    "other": {"label": "🌐 Story", "css": "other"},
+    "funny": {"label": "Funny", "css": "funny"},
+    "heartwarming": {"label": "Heartwarming", "css": "heartwarming"},
+    "food": {"label": "Food Shock", "css": "food"},
+    "culture": {"label": "Culture", "css": "culture"},
+    "stadium": {"label": "Stadium", "css": "stadium"},
+    "match": {"label": "Match Buzz", "css": "match"},
+    "other": {"label": "Story", "css": "other"},
 }
 
 SOURCE_MAP = {
-    "reddit": {"label": "Reddit", "icon": "🟠", "css": "src-reddit"},
-    "web": {"label": "Web", "icon": "🔗", "css": "src-web"},
-    "twitter": {"label": "Twitter/X", "icon": "🐦", "css": "src-twitter"},
-    "news": {"label": "Article", "icon": "📰", "css": "src-news"},
+    "reddit": {"label": "Reddit", "icon": "", "css": "src-reddit"},
+    "web": {"label": "Web", "icon": "", "css": "src-web"},
+    "twitter": {"label": "Twitter/X", "icon": "", "css": "src-twitter"},
+    "news": {"label": "Article", "icon": "", "css": "src-news"},
 }
 
 
