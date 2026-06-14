@@ -38,35 +38,19 @@ def render_card(item: dict) -> str:
     url = item.get("url", "#")
     title = item.get("title", "")
     body = item.get("body", "")
-    caption = item.get("caption", "")
     flag = item.get("flag", "🌍")
-    country = item.get("country", "International")
     author = item.get("author", "")
     src_key = item.get("source_key", "web")
     pm = PLATFORM_META.get(src_key, {"color": "#888", "bg": "rgba(100,100,100,0.08)", "icon": "", "label": src_key})
 
     display_text = title if title else body
-    if len(display_text) > 300:
-        display_text = display_text[:297] + "..."
+    if len(display_text) > 280:
+        display_text = display_text[:277] + "..."
 
     score = item.get("score")
-    score_html = f'<span class="react-count">↑ {score}</span>' if score else ""
-
     author_line = f"u/{author}" if src_key == "reddit" and author else ("@" + author if author else "")
     domain = _extract_domain(url)
-
-    # Platform preview bar (mimics how embeds look in social apps)
-    preview_bar = f"""
-<div class="embed-preview" style="border-color:{pm['color']}20;background:{pm['bg']};">
-  <div class="embed-platform">
-    {pm['icon']}
-    <span style="color:{pm['color']};font-weight:700;font-size:12px;">{pm['label']}</span>
-    <span class="embed-domain">{domain}</span>
-  </div>
-  <p class="embed-text">{display_text}</p>
-  {f'<div class="embed-author">{author_line}</div>' if author_line else ''}
-  {f'<div class="embed-score">{score_html}</div>' if score else ''}
-</div>"""
+    platform_byline = f"{pm['label']} · {domain}" if domain else pm['label']
 
     return f"""
 <a href="{url}" target="_blank" class="card-link">
@@ -75,13 +59,17 @@ def render_card(item: dict) -> str:
   <div class="card-inner">
     <div class="card-header">
       <span class="flag">{flag}</span>
-      <div class="user-info">
-        <div class="country">{country}</div>
+      <div class="platform-meta">
+        {pm['icon']}
+        <span style="color:{pm['color']};font-weight:700;font-size:12px;">{platform_byline}</span>
       </div>
       <span class="cat-badge badge-{cat['css']}">{cat['label']}</span>
     </div>
-    <div class="agent-caption"><strong>🤖</strong> {caption}</div>
-    {preview_bar}
+    <div class="embed-preview" style="border-color:{pm['color']}20;background:{pm['bg']};">
+      <p class="embed-text">{display_text}</p>
+      {f'<div class="embed-author">{author_line}</div>' if author_line else ''}
+      {f'<div class="embed-score">↑ {score}</div>' if score else ''}
+    </div>
   </div>
 </div>
 </a>"""
@@ -130,12 +118,12 @@ STYLES = """
 
 .card-inner { padding: 14px; }
 
-.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.flag { font-size: 26px; line-height: 1; }
-.user-info { flex: 1; }
-.country { font-size: 14px; font-weight: 700; color: #fff; }
+.card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.flag { font-size: 22px; line-height: 1; flex-shrink: 0; }
+.platform-meta { display: flex; align-items: center; gap: 5px; flex: 1; min-width: 0; overflow: hidden; }
+.platform-meta span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.cat-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; }
+.cat-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
 .badge-funny        { background: rgba(240,147,251,0.15); color: #f093fb; }
 .badge-heartwarming { background: rgba(255,107,107,0.15); color: #ff9f9f; }
 .badge-food         { background: rgba(168,237,234,0.15); color: #a8edea; }
@@ -143,20 +131,10 @@ STYLES = """
 .badge-stadium      { background: rgba(67,233,123,0.15);  color: #43e97b; }
 .badge-other        { background: rgba(161,140,209,0.15); color: #a18cd1; }
 
-.agent-caption { font-size: 13px; color: #ccc; font-style: italic; margin-bottom: 10px; padding-left: 4px; line-height: 1.4; }
-.agent-caption strong { font-style: normal; }
-
-/* Social embed preview */
-.embed-preview {
-  border: 1px solid; border-radius: 12px;
-  padding: 12px 14px; margin-top: 2px;
-}
-.embed-platform { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-.embed-domain { font-size: 11px; color: #666; margin-left: 2px; }
-.embed-text { font-size: 14px; line-height: 1.55; color: var(--text); margin: 0 0 6px; }
+.embed-preview { border: 1px solid; border-radius: 12px; padding: 12px 14px; }
+.embed-text { font-size: 14px; line-height: 1.55; color: var(--text); margin: 0 0 4px; }
 .embed-author { font-size: 11px; color: #777; margin-top: 4px; }
 .embed-score { font-size: 11px; color: #888; margin-top: 4px; }
-.react-count { font-size: 11px; color: #888; }
 
 .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 15px; font-family: -apple-system, sans-serif; }
 </style>

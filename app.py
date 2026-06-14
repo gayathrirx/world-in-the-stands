@@ -128,60 +128,19 @@ _theme = gr.themes.Base(
 _css = """
 .gradio-container { max-width: 640px !important; margin: 0 auto !important; }
 footer { display: none !important; }
-
-/* Compact refresh button — small pill, right-aligned */
-.refresh-btn {
-  border-radius: 50px !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  padding: 6px 16px !important;
-  min-width: unset !important;
-  width: auto !important;
-  align-self: flex-end !important;
-}
-
-/* Control bar: refresh + chips on same row */
-.control-bar {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  margin-bottom: 4px !important;
-}
-.control-bar > .wrap { flex: 1; min-width: 0; }
-
-/* Chip-style radio */
-.chip-filter .wrap { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; overflow-x: auto !important; gap: 6px !important; scrollbar-width: none !important; padding-bottom: 2px !important; }
-.chip-filter .wrap::-webkit-scrollbar { display: none !important; }
-.chip-filter span.svelte-1gfkn6j { display: none !important; }
-.chip-filter label { cursor: pointer !important; }
-.chip-filter label > span { display: none !important; }
-.chip-filter .wrap > label {
-  white-space: nowrap !important;
-  padding: 5px 12px !important;
-  border-radius: 20px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  background: rgba(255,255,255,0.07) !important;
-  color: #aaa !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
-  transition: all 0.15s !important;
-  min-width: unset !important;
-}
-.chip-filter .wrap > label:has(input:checked) {
-  background: #e8b84b !important;
-  color: #000 !important;
-  border-color: #e8b84b !important;
-}
-.chip-filter > .label-wrap { display: none !important; }
-.chip-filter > .block { background: transparent !important; border: none !important; padding: 0 !important; }
+.control-row { gap: 8px !important; align-items: center !important; flex-wrap: nowrap !important; }
+.filter-drop { flex: 1 !important; min-width: 0 !important; }
+.filter-drop > label { display: none !important; }
+.filter-drop select { border-radius: 20px !important; font-size: 13px !important; }
+.refresh-btn { white-space: nowrap !important; border-radius: 50px !important; font-size: 13px !important; font-weight: 700 !important; }
 """
 
 with gr.Blocks(title="World In The Stands") as demo:
 
     gr.HTML(HEADER_HTML)
 
-    with gr.Row(elem_classes=["control-bar"]):
-        story_filter = gr.Radio(choices=[f[0] for f in FILTERS], value=FILTERS[0][0], label="", interactive=True, elem_classes=["chip-filter"])
+    with gr.Row(elem_classes=["control-row"]):
+        story_filter = gr.Dropdown(choices=[f[0] for f in FILTERS], value=FILTERS[0][0], label="Filter", interactive=True, elem_classes=["filter-drop"])
         story_btn = gr.Button("↻ Refresh", variant="primary", size="sm", elem_classes=["refresh-btn"])
 
     story_out = gr.HTML(render_status("Loading stories...", is_loading=True))
