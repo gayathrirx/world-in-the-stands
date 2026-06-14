@@ -1,4 +1,4 @@
-SOCIAL_SOURCES = {"reddit"}
+SOCIAL_SOURCES = {"reddit", "twitter", "instagram", "facebook"}
 
 
 def _extract_domain(url: str) -> str:
@@ -116,10 +116,12 @@ STYLES = """
 
 /* left accent by source */
 .card { border-left: 3px solid transparent; }
-.src-reddit  { border-left-color: #ff4500; }
-.src-twitter { border-left-color: #1d9bf0; }
-.src-news    { border-left-color: #a78bfa; }
-.src-web     { border-left-color: #555; }
+.src-reddit    { border-left-color: #ff4500; }
+.src-twitter   { border-left-color: #1d9bf0; }
+.src-instagram { border-left-color: #e1306c; }
+.src-facebook  { border-left-color: #1877f2; }
+.src-news      { border-left-color: #a78bfa; }
+.src-web       { border-left-color: #555; }
 
 .card-inner { padding: 14px; }
 
@@ -164,10 +166,12 @@ STYLES = """
   font-size: 11px; font-weight: 600; padding: 3px 9px;
   border-radius: 20px; display: flex; align-items: center; gap: 4px;
 }
-.badge-src-reddit  { background: rgba(255,69,0,0.15);  color: #ff6b35; }
-.badge-src-twitter { background: rgba(29,155,240,0.15); color: #5bb8f5; }
-.badge-src-news    { background: rgba(167,139,250,0.15);color: #a78bfa; }
-.badge-src-web     { background: rgba(100,100,100,0.15);color: #999; }
+.badge-src-reddit    { background: rgba(255,69,0,0.15);   color: #ff6b35; }
+.badge-src-twitter   { background: rgba(29,155,240,0.15);  color: #5bb8f5; }
+.badge-src-instagram { background: rgba(225,48,108,0.15);  color: #e1306c; }
+.badge-src-facebook  { background: rgba(24,119,242,0.15);  color: #4a90e2; }
+.badge-src-news      { background: rgba(167,139,250,0.15); color: #a78bfa; }
+.badge-src-web       { background: rgba(100,100,100,0.15); color: #999; }
 
 .indirect-note { font-size: 9px; opacity: 0.7; margin-left: 3px; }
 .footer-right { display: flex; align-items: center; gap: 10px; }

@@ -17,8 +17,10 @@ CATEGORY_MAP = {
 
 SOURCE_MAP = {
     "reddit": {"label": "Reddit", "icon": "", "css": "src-reddit"},
+    "twitter": {"label": "X / Twitter", "icon": "", "css": "src-twitter"},
+    "instagram": {"label": "Instagram", "icon": "", "css": "src-instagram"},
+    "facebook": {"label": "Facebook", "icon": "", "css": "src-facebook"},
     "web": {"label": "Web", "icon": "", "css": "src-web"},
-    "twitter": {"label": "Twitter/X", "icon": "", "css": "src-twitter"},
     "news": {"label": "Article", "icon": "", "css": "src-news"},
 }
 
@@ -28,10 +30,13 @@ def detect_source(url: str, source: str) -> str:
         return "reddit"
     if "twitter.com" in url or "x.com" in url:
         return "twitter"
-    if source == "web":
-        news_domains = ["bbc", "cnn", "guardian", "espn", "goal.com", "theguardian", "nytimes", "reuters", "ap.org"]
-        if any(d in url for d in news_domains):
-            return "news"
+    if "instagram.com" in url:
+        return "instagram"
+    if "facebook.com" in url or "fb.com" in url:
+        return "facebook"
+    news_domains = ["bbc", "cnn", "guardian", "espn", "goal.com", "theguardian", "nytimes", "reuters", "ap.org"]
+    if any(d in url for d in news_domains):
+        return "news"
     return source
 
 

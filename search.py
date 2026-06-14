@@ -5,18 +5,18 @@ WEB_QUERIES = [
     "world cup 2026 fans america heartwarming moment site:reddit.com",
     "foreign fans american food culture shock world cup site:reddit.com",
     "world cup 2026 international visitors kindness USA site:reddit.com",
-    "world cup 2026 fans surprised america first time site:reddit.com",
-    "world cup 2026 visitors enjoying USA stadium atmosphere site:reddit.com",
+    "world cup 2026 visitors USA experience site:x.com OR site:twitter.com",
+    "world cup 2026 fans surprised america first time site:x.com OR site:twitter.com",
     "world cup fans america funny cultural difference site:reddit.com",
-    "world cup 2026 visiting fans generous americans site:reddit.com",
+    "world cup 2026 visiting fans USA instagram.com OR facebook.com",
 ]
 
 MATCH_QUERIES = [
     "world cup 2026 match result upset fan reaction site:reddit.com",
-    "world cup 2026 goal celebration fans emotion site:reddit.com",
+    "world cup 2026 goal celebration fans emotion site:x.com OR site:twitter.com",
     "world cup 2026 loss heartbreak reaction site:reddit.com",
     "world cup 2026 match score fan discussion site:reddit.com",
-    "world cup 2026 stadium atmosphere fans site:reddit.com",
+    "world cup 2026 stadium atmosphere fans site:x.com OR site:twitter.com",
 ]
 
 

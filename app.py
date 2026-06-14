@@ -49,8 +49,12 @@ HEADER_HTML = f"""{STYLES}
 
 SOURCE_LEGEND = """
 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-family:-apple-system,sans-serif;">
-  <span style="font-size:11px;color:#888;align-self:center;">Source:</span>
-  <span style="font-size:11px;background:rgba(255,69,0,0.15);color:#ff6b35;padding:3px 10px;border-radius:20px;font-weight:600;">Reddit — click any card to open the post</span>
+  <span style="font-size:11px;color:#888;align-self:center;">Sources:</span>
+  <span style="font-size:11px;background:rgba(255,69,0,0.15);color:#ff6b35;padding:3px 10px;border-radius:20px;font-weight:600;">Reddit</span>
+  <span style="font-size:11px;background:rgba(29,155,240,0.15);color:#5bb8f5;padding:3px 10px;border-radius:20px;font-weight:600;">X / Twitter</span>
+  <span style="font-size:11px;background:rgba(225,48,108,0.15);color:#e1306c;padding:3px 10px;border-radius:20px;font-weight:600;">Instagram</span>
+  <span style="font-size:11px;background:rgba(24,119,242,0.15);color:#4a90e2;padding:3px 10px;border-radius:20px;font-weight:600;">Facebook</span>
+  <span style="font-size:11px;color:#666;align-self:center;">· click any card to open</span>
 </div>"""
 
 
