@@ -34,6 +34,7 @@ last_stories_refresh: float = STORIES_CACHE_FILE.stat().st_mtime if STORIES_CACH
 
 FILTERS = [
     ("All", "all"),
+    ("Freebies", "freebie"),
     ("Funny", "funny"),
     ("Heartwarming", "heartwarming"),
     ("Food Shock", "food"),

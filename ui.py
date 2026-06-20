@@ -134,6 +134,7 @@ STYLES = """
 .cat-food .card-top-bar         { background: linear-gradient(90deg,#a8edea,#fed6e3); }
 .cat-culture .card-top-bar      { background: linear-gradient(90deg,#4facfe,#00f2fe); }
 .cat-stadium .card-top-bar      { background: linear-gradient(90deg,#43e97b,#38f9d7); }
+.cat-freebie .card-top-bar      { background: linear-gradient(90deg,#f6d365,#fda085); }
 .cat-other .card-top-bar        { background: linear-gradient(90deg,#a18cd1,#fbc2eb); }
 
 .card-inner { padding: 14px; }
@@ -149,6 +150,7 @@ STYLES = """
 .badge-food         { background: rgba(168,237,234,0.15); color: #a8edea; }
 .badge-culture      { background: rgba(79,172,254,0.15);  color: #4facfe; }
 .badge-stadium      { background: rgba(67,233,123,0.15);  color: #43e97b; }
+.badge-freebie      { background: rgba(246,211,101,0.18); color: #f6c343; }
 .badge-other        { background: rgba(161,140,209,0.15); color: #a18cd1; }
 
 .card-caption { font-size: 14px; font-weight: 600; color: #e8e8e8; line-height: 1.45; margin-bottom: 10px; }

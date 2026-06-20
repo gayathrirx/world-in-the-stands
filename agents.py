@@ -1,6 +1,7 @@
 import anthropic
 import json
 import os
+from datetime import date as _date
 from search import fetch_all_stories, fetch_match_buzz
 
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
@@ -11,6 +12,7 @@ CATEGORY_MAP = {
     "food": {"label": "Food Shock", "css": "food"},
     "culture": {"label": "Culture", "css": "culture"},
     "stadium": {"label": "Stadium", "css": "stadium"},
+    "freebie": {"label": "Freebie", "css": "freebie"},
     "match": {"label": "Match Buzz", "css": "match"},
     "other": {"label": "Story", "css": "other"},
 }
@@ -51,29 +53,39 @@ def curate_and_tag(raw_items: list[dict], mode: str = "stories") -> list[dict]:
         src = item.get("source", "web")
         buckets[src].append(item)
 
-    balanced = []
+    # Freebie candidates always get a guaranteed slot (up to 12) so deals never get
+    # crowded out of the curator's batch — they're a separate bucket from the stories.
+    freebie_cands = [i for i in raw_items if i.get("freebie_hint")][:12]
+
+    balanced = list(freebie_cands)
+    seen_urls = {i["url"] for i in balanced}
     per_source = max(8, 40 // max(len(buckets), 1))
     for src in ["reddit", "twitter", "instagram", "facebook"]:
-        balanced.extend(buckets[src][:per_source])
+        for item in buckets[src][:per_source]:
+            if item["url"] not in seen_urls:
+                balanced.append(item)
+                seen_urls.add(item["url"])
     # fill remaining slots with whatever's left
-    seen_urls = {i["url"] for i in balanced}
     for item in raw_items:
-        if len(balanced) >= 60:
+        if len(balanced) >= 70:
             break
         if item["url"] not in seen_urls:
             balanced.append(item)
             seen_urls.add(item["url"])
 
-    print(f"Curator input: {len(balanced)} items — " +
-          ", ".join(f"{s}:{len(buckets[s])}" for s in ['reddit','twitter','instagram','facebook']))
+    print(f"Curator input: {len(balanced)} items — "
+          + ", ".join(f"{s}:{len(buckets[s])}" for s in ['reddit', 'twitter', 'instagram', 'facebook'])
+          + f", freebie-cands:{len(freebie_cands)}")
 
-    batch = balanced[:60]
+    batch = balanced[:70]
     summaries = []
     for i, item in enumerate(batch):
         text = f"{item.get('title', '')} {item.get('body', '')}".strip()[:300]
         summaries.append(f"[{i}] url={item.get('url','')} | {text}")
 
+    today = _date.today().isoformat()
     prompt = f"""You are curating social media posts about World Cup 2026 fans and visitors in the USA.
+Today's date is {today}.
 
 Here are {len(summaries)} raw search results from Reddit, X/Twitter, Instagram, and Facebook.
 
@@ -85,27 +97,38 @@ Accept ANY of these:
 - A funny, heartwarming, or surprising moment involving international fans in the USA
 - Fan reactions to games, goals, wins, losses
 - Observations about Americans hosting World Cup fans
+- FREEBIES & DEALS: a shop, restaurant, brand, or chain offering free or discounted
+  items tied to the World Cup or a USA win (e.g. "free fries when USA scores", "tacos
+  on us if USMNT wins tonight")
 
 REJECT only:
 - Pure news articles with no fan voice (e.g. "FIFA announces schedule")
 - Spam or unrelated content
 - URLs not from the 4 social platforms listed above
 
-Be GENEROUS — if in doubt, keep it. We want 15-20 stories.
+FREEBIE RULES (important):
+- Tag deal/giveaway posts with category "freebie".
+- ONLY keep a freebie if it is still redeemable today ({today}) or in the FUTURE.
+  Reject any deal that has clearly already expired (its valid date / game has passed).
+- If the deal has no clear end date and looks like an ongoing "every time USA wins"
+  promo, keep it.
+
+Be GENEROUS for non-freebie stories — if in doubt, keep it. We want 15-20 items.
 
 For each KEPT post assign:
-- category: funny | heartwarming | food | culture | stadium | other
+- category: freebie | funny | heartwarming | food | culture | stadium | other
 - caption: one punchy sentence (max 120 chars) like a sports journalist
 - country_guess: visitor's home country if inferable, else null
 - flag: emoji flag if known, else "🌍"
 
-Aim for variety across platforms and countries. Max 4 per category.
+Aim for variety across platforms and countries. Max 4 per category —
+EXCEPT freebies: keep up to 10 freebie/deal posts (they are a separate bucket).
 
 Raw results:
 {chr(10).join(summaries)}
 
 Respond with ONLY a JSON array. Keys: index, category, caption, country_guess, flag
-Example: [{{"index": 0, "category": "funny", "caption": "Brazilian fan discovers a US small coffee is medically inadvisable.", "country_guess": "Brazil", "flag": "🇧🇷"}}]"""
+Example: [{{"index": 0, "category": "freebie", "caption": "Free fries at every US win — this chain is feeding the bandwagon.", "country_guess": null, "flag": "🇺🇸"}}]"""
 
     response = client.messages.create(
         model="claude-sonnet-4-6",

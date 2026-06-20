@@ -36,6 +36,15 @@ FACEBOOK_QUERIES = [
     "world cup 2026 international fans usa site:facebook.com",
 ]
 
+# ── Freebies / win-day deals ──
+FREEBIE_QUERIES = [
+    "free food deal when USA wins world cup 2026",
+    "restaurant free promo USMNT win world cup 2026",
+    "world cup 2026 USA win free fries tacos deal",
+    "brand giveaway USA goal world cup 2026 free",
+    "world cup 2026 USA win discount deal today",
+]
+
 # URLs that are NOT individual posts (profiles, search, explore, landing pages, etc.)
 _JUNK_PATH = re.compile(
     r"(/search|/explore|/hashtag|/tags?/|/about|/help|/login|/i/|/watch/?$|"
@@ -195,6 +204,12 @@ def fetch_all_stories() -> list[dict]:
     _add(_search_many(TWITTER_QUERIES, 10))
     _add(_search_many(INSTAGRAM_QUERIES, 10))
     _add(_search_many(FACEBOOK_QUERIES, 10))
+
+    # 3. Freebies / win-day deals — tag them so the curator always keeps them
+    freebie_items = _search_many(FREEBIE_QUERIES, 10)
+    for it in freebie_items:
+        it["freebie_hint"] = True
+    _add(freebie_items)
 
     social = [r for r in results if r["source"] in {"reddit", "twitter", "instagram", "facebook"}]
     from collections import Counter
