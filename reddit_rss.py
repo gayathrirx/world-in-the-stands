@@ -60,7 +60,13 @@ def _strip_html(s: str) -> str:
     import html
     s = re.sub(r"<[^>]+>", " ", s)
     s = html.unescape(s)
-    return re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\s+", " ", s).strip()
+    # link/image posts have no selftext — RSS gives only this boilerplate
+    if re.fullmatch(r"submitted by\s*/u/\S+\s*(\[link\])?\s*(\[comments\])?", s, re.IGNORECASE):
+        return ""
+    # strip trailing "submitted by /u/x [link] [comments]" from real bodies
+    s = re.sub(r"\s*submitted by\s*/u/\S+\s*(\[link\])?\s*(\[comments\])?\s*$", "", s, flags=re.IGNORECASE)
+    return s.strip()
 
 
 def fetch_reddit_rss(max_per_feed: int = 8) -> list[dict]:

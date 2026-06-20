@@ -1,24 +1,47 @@
+import re
 from ddgs import DDGS
 from reddit_rss import fetch_reddit_rss
 
-# X / Twitter
+# ── Reddit fallback (used when RSS is blocked, e.g. on datacenter IPs like HF) ──
+REDDIT_QUERIES = [
+    "world cup 2026 fan USA experience reddit",
+    "world cup 2026 foreign fan america surprised reddit",
+    "world cup 2026 international fan USA food culture shock reddit",
+    "world cup 2026 fan stadium america atmosphere reddit",
+    "world cup 2026 tourist USA kindness heartwarming reddit",
+    "world cup 2026 visitor america personal story reddit",
+    "world cup 2026 fans first time america reddit",
+    "site:reddit.com world cup 2026 fan USA",
+]
+
+# ── X / Twitter ──
 TWITTER_QUERIES = [
     "world cup 2026 fan USA experience site:x.com",
     "world cup 2026 visitor america funny site:twitter.com",
-    "world cup 2026 international fan america reaction twitter",
+    "world cup 2026 international fan america reaction site:x.com",
+    "world cup 2026 fans loving usa site:x.com",
 ]
 
-# Instagram
+# ── Instagram ──
 INSTAGRAM_QUERIES = [
     "world cup 2026 fan USA experience site:instagram.com",
-    "world cup 2026 visiting supporter america instagram",
+    "world cup 2026 visiting supporter america site:instagram.com",
+    "world cup 2026 fans america moment site:instagram.com",
 ]
 
-# Facebook
+# ── Facebook ──
 FACEBOOK_QUERIES = [
     "world cup 2026 fan USA story site:facebook.com",
-    "world cup 2026 visitor america moment facebook",
+    "world cup 2026 visitor america moment site:facebook.com",
+    "world cup 2026 international fans usa site:facebook.com",
 ]
+
+# URLs that are NOT individual posts (profiles, search, explore, landing pages, etc.)
+_JUNK_PATH = re.compile(
+    r"(/search|/explore|/hashtag|/tags?/|/about|/help|/login|/i/|/watch/?$|"
+    r"/(reels?|videos|photos)/?$|/groups/?$|/events/?$)",
+    re.IGNORECASE,
+)
 
 
 def _classify_url(url: str) -> str:
@@ -30,48 +53,134 @@ def _classify_url(url: str) -> str:
         return "instagram"
     if "facebook.com" in url or "fb.com" in url:
         return "facebook"
-    news = ["bbc", "cnn", "guardian", "espn", "goal.com", "nytimes", "reuters", "ap.org", "fifa", "cbssports", "nbcsports"]
+    news = ["bbc", "cnn", "guardian", "espn", "goal.com", "nytimes", "reuters",
+            "ap.org", "fifa", "cbssports", "nbcsports", "houstonpublicmedia",
+            "yahoo", "msn", "usatoday", "foxnews", "nbcnews", "abcnews"]
     if any(d in url for d in news):
         return "news"
     return "web"
 
 
+def _is_real_post(url: str, source: str) -> bool:
+    """Keep only URLs that point at an actual post, not a profile/search/landing page."""
+    if _JUNK_PATH.search(url):
+        return False
+    if source == "reddit":
+        return "/comments/" in url
+    if source == "twitter":
+        return "/status/" in url
+    if source == "instagram":
+        return "/p/" in url or "/reel/" in url
+    if source == "facebook":
+        return any(p in url for p in ("/posts/", "/story", "permalink", "/videos/", "/photo"))
+    return True
+
+
+_DATE_PREFIX = re.compile(
+    r"^\s*(\d+\s+(hour|day|week|month)s?\s+ago|[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})"
+    r"\s*[-·–—.]*\s*\.{0,3}\s*",
+)
+# DDG placeholder/empty snippets with no real content
+_USELESS_BODY = re.compile(
+    r"(the site owner hides the web page description|"
+    r"submitted by\s*/u/\S+\s*\[link\]\s*\[comments\]|"
+    r"^\s*$)",
+    re.IGNORECASE,
+)
+
+
+def _clean_body(text: str) -> str:
+    """Strip DuckDuckGo metadata noise from snippet bodies."""
+    if not text:
+        return ""
+    text = _DATE_PREFIX.sub("", text)
+    # "981 votes, 1.4K comments." vote/comment counters
+    text = re.sub(r"\b[\d.,]+K?\s+(votes?|comments?|likes?|shares?)\b[.,]?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s*\.\.\.\s*", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _is_useless(item: dict) -> bool:
+    """Reject results with no usable content (placeholder titles/bodies)."""
+    title = item.get("title", "").strip()
+    body = item.get("body", "").strip()
+    tl = title.lower()
+    # "site owner hides the web page description" snippet never has value
+    if "site owner hides the web page description" in body.lower():
+        return True
+    # bare "Link to instagram.com" style titles with no real headline
+    if tl.endswith(("link to instagram.com", "link to facebook.com", "link to x.com", "link to twitter.com")):
+        return True
+    if tl.startswith(("link to ", "instagram.com", "facebook.com", "x.com")) and len(body) < 25:
+        return True
+    return False
+
+
 def _text_search(query: str, max_results: int = 10) -> list[dict]:
     try:
         with DDGS() as ddgs:
-            return [
-                {"title": r.get("title", ""), "body": r.get("body", ""), "url": r.get("href", ""), "source": _classify_url(r.get("href", ""))}
-                for r in ddgs.text(query, max_results=max_results)
-            ]
+            out = []
+            for r in ddgs.text(query, max_results=max_results, region="us-en", timelimit="m"):
+                url = r.get("href", "")
+                src = _classify_url(url)
+                out.append({
+                    "title": r.get("title", ""),
+                    "body": _clean_body(r.get("body", "")),
+                    "url": url,
+                    "source": src,
+                })
+            return out
     except Exception as e:
         print(f"Text search error [{query[:40]}]: {e}")
         return []
+
+
+def _search_many(queries: list[str], max_results: int = 10) -> list[dict]:
+    out = []
+    for q in queries:
+        out.extend(_text_search(q, max_results=max_results))
+    return out
 
 
 def fetch_all_stories() -> list[dict]:
     seen = set()
     results = []
 
-    def _add(items):
+    def _add(items, require_real_post=True):
         for item in items:
             url = item["url"]
-            if url and url not in seen:
-                seen.add(url)
-                results.append(item)
+            if not url or url in seen:
+                continue
+            src = item.get("source", "web")
+            # drop non-post URLs for social platforms; keep reddit-from-RSS as-is
+            if require_real_post and src in {"twitter", "instagram", "facebook"} and not _is_real_post(url, src):
+                continue
+            if _is_useless(item):
+                continue
+            seen.add(url)
+            results.append(item)
 
-    # 1. Reddit via RSS — genuinely fresh + relevant posts
+    # 1. Reddit via RSS — genuinely fresh + relevant. Falls back to DDG if blocked (HF IP).
+    reddit_items = []
     try:
-        _add(fetch_reddit_rss(max_per_feed=8))
+        reddit_items = fetch_reddit_rss(max_per_feed=8)
     except Exception as e:
-        print(f"Reddit RSS failed, falling back to DDG: {e}")
-        _add(_text_search("world cup 2026 fan USA experience reddit", max_results=10))
+        print(f"Reddit RSS error: {e}")
+    if not reddit_items:
+        print("Reddit RSS empty — falling back to DuckDuckGo")
+        reddit_items = [r for r in _search_many(REDDIT_QUERIES, 10) if r["source"] == "reddit"]
+    _add(reddit_items, require_real_post=False)
 
-    # 2. X / Instagram / Facebook via DuckDuckGo (no free real-time API exists)
-    for q in TWITTER_QUERIES + INSTAGRAM_QUERIES + FACEBOOK_QUERIES:
-        _add(_text_search(q, max_results=10))
+    # 2. X / Instagram / Facebook via DuckDuckGo
+    _add(_search_many(TWITTER_QUERIES, 10))
+    _add(_search_many(INSTAGRAM_QUERIES, 10))
+    _add(_search_many(FACEBOOK_QUERIES, 10))
 
     social = [r for r in results if r["source"] in {"reddit", "twitter", "instagram", "facebook"}]
-    print(f"Fetched {len(results)} raw results, {len(social)} social")
+    from collections import Counter
+    by_src = Counter(r["source"] for r in social)
+    print(f"Fetched {len(results)} raw, {len(social)} social — {dict(by_src)}")
     return results
 
 
