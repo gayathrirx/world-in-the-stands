@@ -1,16 +1,5 @@
 from ddgs import DDGS
-
-# Reddit — broad, no time limit so we get enough results
-REDDIT_QUERIES = [
-    "world cup 2026 visiting fan USA experience reddit",
-    "world cup 2026 foreign fan america surprised funny reddit",
-    "world cup 2026 international fan USA food culture shock reddit",
-    "world cup 2026 fan stadium america atmosphere reddit",
-    "world cup 2026 tourist USA kindness heartwarming reddit",
-    "world cup 2026 visitor america personal story reddit",
-    "world cup 2026 fan USA first time america reddit",
-    "site:reddit.com world cup 2026 fan USA experience",
-]
+from reddit_rss import fetch_reddit_rss
 
 # X / Twitter
 TWITTER_QUERIES = [
@@ -70,8 +59,15 @@ def fetch_all_stories() -> list[dict]:
                 seen.add(url)
                 results.append(item)
 
-    all_queries = REDDIT_QUERIES + TWITTER_QUERIES + INSTAGRAM_QUERIES + FACEBOOK_QUERIES
-    for q in all_queries:
+    # 1. Reddit via RSS — genuinely fresh + relevant posts
+    try:
+        _add(fetch_reddit_rss(max_per_feed=8))
+    except Exception as e:
+        print(f"Reddit RSS failed, falling back to DDG: {e}")
+        _add(_text_search("world cup 2026 fan USA experience reddit", max_results=10))
+
+    # 2. X / Instagram / Facebook via DuckDuckGo (no free real-time API exists)
+    for q in TWITTER_QUERIES + INSTAGRAM_QUERIES + FACEBOOK_QUERIES:
         _add(_text_search(q, max_results=10))
 
     social = [r for r in results if r["source"] in {"reddit", "twitter", "instagram", "facebook"}]
