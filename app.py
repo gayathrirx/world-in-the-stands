@@ -85,15 +85,27 @@ def _stories_html(filter_key="all"):
 
 
 def auto_load_stories():
-    global stories_cache, last_stories_refresh
+    # Cache is pre-warmed at server startup (see _prewarm below), so this just
+    # renders whatever is cached — first visitor never waits on the pipeline.
     if stories_cache:
         return _stories_html()
-    # no cache — fetch in foreground (first cold start)
-    yield render_status("Finding fan stories from around the world...", is_loading=True)
-    stories_cache = run_stories_pipeline()
-    last_stories_refresh = time.time()
-    _save(STORIES_CACHE_FILE, stories_cache)
-    yield _stories_html()
+    return render_status("No stories yet — tap ↻ Refresh to load them.", is_loading=False)
+
+
+def _prewarm():
+    """Fetch + curate once at server startup so the cache is warm for everyone."""
+    global stories_cache, last_stories_refresh
+    if stories_cache:
+        print(f"Prewarm: cache already has {len(stories_cache)} stories")
+        return
+    try:
+        print("Prewarm: fetching stories at startup...")
+        stories_cache = run_stories_pipeline()
+        last_stories_refresh = time.time()
+        _save(STORIES_CACHE_FILE, stories_cache)
+        print(f"Prewarm: cached {len(stories_cache)} stories")
+    except Exception as e:
+        print(f"Prewarm failed (users can tap Refresh): {e}")
 
 
 def refresh_stories():
@@ -182,7 +194,7 @@ document.addEventListener('click', function(e) {
 </script>
 """
 
-with gr.Blocks(title="World In The Stands", head=_head) as demo:
+with gr.Blocks(title="World In The Stands") as demo:
 
     gr.HTML(HEADER_HTML)
 
@@ -202,4 +214,5 @@ with gr.Blocks(title="World In The Stands", head=_head) as demo:
 
 
 if __name__ == "__main__":
-    demo.launch()
+    _prewarm()
+    demo.launch(head=_head)
