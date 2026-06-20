@@ -184,11 +184,13 @@ document.addEventListener('click', function(e) {
   if (!chip) return;
   document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
   chip.classList.add('active');
-  var tb = document.querySelector('.filter-state textarea');
+  var tb = document.querySelector('.filter-state textarea, .filter-state input');
   if (tb) {
-    var setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+    var proto = tb.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+    var setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
     setter.call(tb, chip.dataset.val);
     tb.dispatchEvent(new Event('input', { bubbles: true }));
+    tb.dispatchEvent(new Event('change', { bubbles: true }));
   }
 });
 </script>
@@ -199,7 +201,9 @@ with gr.Blocks(title="World In The Stands") as demo:
     gr.HTML(HEADER_HTML)
 
     filter_bar = gr.HTML(_filter_bar_html("all"))
-    filter_state = gr.Textbox(value="all", visible=False, elem_classes=["filter-state"])
+    # visible (rendered in DOM) but CSS-hidden — so the JS can write to its textarea
+    # and Gradio keeps the change-listener wired. visible=False can drop the wiring.
+    filter_state = gr.Textbox(value="all", elem_classes=["filter-state"])
 
     with gr.Row():
         story_btn = gr.Button("↻ Refresh", variant="primary", size="sm", elem_classes=["refresh-btn"])
