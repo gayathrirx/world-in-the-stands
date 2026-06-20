@@ -223,4 +223,4 @@ _prewarm()
 
 
 if __name__ == "__main__":
-    demo.launch(head=_head)
+    demo.launch(head=_head, css=_css)
