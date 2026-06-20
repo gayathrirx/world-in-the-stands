@@ -108,10 +108,12 @@ REJECT only:
 
 FREEBIE RULES (important):
 - Tag deal/giveaway posts with category "freebie".
-- ONLY keep a freebie if it is still redeemable today ({today}) or in the FUTURE.
-  Reject any deal that has clearly already expired (its valid date / game has passed).
-- If the deal has no clear end date and looks like an ongoing "every time USA wins"
-  promo, keep it.
+- Many brands (Steak 'n Shake, McDonald's, Chipotle, Jeep, Wendy's, etc.) run a NEW
+  deal for EACH USA match. Treat these recurring "if USA wins" promos as ONGOING and
+  KEEP them, even if one specific past game is mentioned — the offer repeats next match.
+- Only reject a freebie if it is clearly a ONE-TIME offer whose single date has fully
+  passed (today is {today}) with no recurring pattern.
+- When in doubt about a freebie, KEEP it.
 
 Be GENEROUS for non-freebie stories — if in doubt, keep it. We want 15-20 items.
 

@@ -37,12 +37,17 @@ FACEBOOK_QUERIES = [
 ]
 
 # ── Freebies / win-day deals ──
+# These deals live mostly on brand X/Twitter accounts, so name brands + target X.
 FREEBIE_QUERIES = [
-    "free food deal when USA wins world cup 2026",
-    "restaurant free promo USMNT win world cup 2026",
-    "world cup 2026 USA win free fries tacos deal",
-    "brand giveaway USA goal world cup 2026 free",
-    "world cup 2026 USA win discount deal today",
+    "Steak n Shake McDonalds Chipotle USA win world cup free site:x.com",
+    "world cup 2026 USA win free food deal site:x.com",
+    "USMNT win free fries burger taco promo site:x.com",
+    "brand giveaway if USA wins world cup 2026 free site:x.com",
+    "Jeep Wendys Popeyes restaurant world cup USA win free site:x.com",
+    "world cup 2026 USA win deal free site:instagram.com",
+    # broader brand/news catch-all (non-social deal pages)
+    "free food deal when USA wins world cup 2026 restaurant",
+    "world cup 2026 USA win brand promo giveaway",
 ]
 
 # URLs that are NOT individual posts (profiles, search, explore, landing pages, etc.)
