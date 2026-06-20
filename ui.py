@@ -48,7 +48,13 @@ def render_card(item: dict) -> str:
     flag = item.get("flag", "🌍")
     author = item.get("author", "")
     src_key = item.get("source_key", "web")
-    pm = PLATFORM_META.get(src_key, {"color": "#888", "bg": "rgba(100,100,100,0.08)", "icon": "", "label": src_key})
+    # freebie deals can come from brand/news sites — show a deal tag + domain there
+    is_offsite = src_key not in PLATFORM_META
+    if is_offsite:
+        pm = {"color": "#f6c343", "bg": "rgba(246,195,67,0.08)",
+              "icon": '<span style="font-size:15px;">🏷️</span>', "label": "Deal"}
+    else:
+        pm = PLATFORM_META[src_key]
 
     snippet = body if body else title
     if len(snippet) > 180:
@@ -56,6 +62,8 @@ def render_card(item: dict) -> str:
 
     date = item.get("date", "")
     author_line = f"u/{author}" if src_key == "reddit" and author else ("@" + author if author else "")
+    if is_offsite:
+        author_line = _extract_domain(url)
     # byline next to the icons: "u/name · 3d ago"
     meta_parts = [p for p in [author_line, date] if p]
     meta = " · ".join(meta_parts)
@@ -97,7 +105,9 @@ def render_feed(items: list[dict], active_filter: str = "all") -> str:
     for i in items:
         url = i.get("url", "")
         src = _src(i)
-        if src not in SOCIAL_SOURCES:
+        # fan stories must be from a social platform; freebie deals can come from
+        # brand/news sites too, so allow those through.
+        if src not in SOCIAL_SOURCES and i.get("category_key") != "freebie":
             continue
         title = i.get("title", "")
         title_key = "".join(c.lower() for c in title if c.isalnum())[:50]
