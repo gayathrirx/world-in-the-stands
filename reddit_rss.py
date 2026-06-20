@@ -42,17 +42,42 @@ def _parse_feed(xml_text: str) -> list[dict]:
         title_el = e.find("a:title", _NS)
         author_el = e.find("a:author/a:name", _NS)
         content_el = e.find("a:content", _NS)
+        updated_el = e.find("a:updated", _NS)
+        published_el = e.find("a:published", _NS)
         title = title_el.text if title_el is not None else ""
         author = (author_el.text or "").replace("/u/", "") if author_el is not None else ""
         body = _strip_html(content_el.text) if content_el is not None and content_el.text else ""
+        iso = (published_el.text if published_el is not None else None) or \
+              (updated_el.text if updated_el is not None else None) or ""
         out.append({
             "title": title or "",
             "body": body[:400],
             "url": url,
             "source": "reddit",
             "author": author,
+            "date": _relative_date(iso),
         })
     return out
+
+
+def _relative_date(iso: str) -> str:
+    """Turn an ISO timestamp into '3d ago' / '5h ago' / 'Jun 14'."""
+    if not iso:
+        return ""
+    from datetime import datetime, timezone
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        secs = (now - dt).total_seconds()
+        if secs < 3600:
+            return f"{max(1, int(secs // 60))}m ago"
+        if secs < 86400:
+            return f"{int(secs // 3600)}h ago"
+        if secs < 7 * 86400:
+            return f"{int(secs // 86400)}d ago"
+        return dt.strftime("%b %d")
+    except Exception:
+        return ""
 
 
 def _strip_html(s: str) -> str:

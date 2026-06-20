@@ -54,10 +54,11 @@ def render_card(item: dict) -> str:
     if len(snippet) > 180:
         snippet = snippet[:177] + "..."
 
-    score = item.get("score")
+    date = item.get("date", "")
     author_line = f"u/{author}" if src_key == "reddit" and author else ("@" + author if author else "")
-    footer_parts = [p for p in [author_line, f"↑ {score}" if score else ""] if p]
-    footer = " · ".join(footer_parts)
+    # byline next to the icons: "u/name · 3d ago"
+    meta_parts = [p for p in [author_line, date] if p]
+    meta = " · ".join(meta_parts)
 
     return f"""
 <a href="{url}" target="_blank" class="card-link">
@@ -67,12 +68,12 @@ def render_card(item: dict) -> str:
     <div class="card-header">
       <span class="flag">{flag}</span>
       <span class="platform-icon">{pm['icon']}</span>
+      {f'<span class="card-meta">{meta}</span>' if meta else ''}
       <span class="cat-badge badge-{cat['css']}">{cat['label']}</span>
     </div>
     {f'<p class="card-caption">{caption}</p>' if caption else ''}
     <div class="embed-preview" style="border-color:{pm['color']}20;background:{pm['bg']};">
       <p class="embed-text">{snippet}</p>
-      {f'<div class="embed-footer">{footer}</div>' if footer else ''}
     </div>
   </div>
 </div>
@@ -139,7 +140,8 @@ STYLES = """
 
 .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .flag { font-size: 22px; line-height: 1; flex-shrink: 0; }
-.platform-icon { display: flex; align-items: center; flex: 1; }
+.platform-icon { display: flex; align-items: center; flex-shrink: 0; }
+.card-meta { flex: 1; font-size: 12px; color: #8a93a6; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .cat-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
 .badge-funny        { background: rgba(240,147,251,0.15); color: #f093fb; }

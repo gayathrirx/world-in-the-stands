@@ -89,6 +89,23 @@ _USELESS_BODY = re.compile(
 )
 
 
+def _extract_date(text: str) -> str:
+    """Pull the leading date from a DDG snippet → '3d ago' / 'Jun 11'."""
+    if not text:
+        return ""
+    m = _DATE_PREFIX.match(text)
+    if not m:
+        return ""
+    raw = m.group(1)
+    rel = re.match(r"(\d+)\s+(hour|day|week|month)s?\s+ago", raw)
+    if rel:
+        n, unit = rel.group(1), rel.group(2)[0]  # h/d/w/m
+        return f"{n}{unit} ago"
+    # absolute date like "Jun 11, 2026" → "Jun 11"
+    abs_m = re.match(r"([A-Z][a-z]{2}\s+\d{1,2}),", raw)
+    return abs_m.group(1) if abs_m else ""
+
+
 def _clean_body(text: str) -> str:
     """Strip DuckDuckGo metadata noise from snippet bodies."""
     if not text:
@@ -124,11 +141,13 @@ def _text_search(query: str, max_results: int = 10) -> list[dict]:
             for r in ddgs.text(query, max_results=max_results, region="us-en", timelimit="m"):
                 url = r.get("href", "")
                 src = _classify_url(url)
+                raw_body = r.get("body", "")
                 out.append({
                     "title": r.get("title", ""),
-                    "body": _clean_body(r.get("body", "")),
+                    "body": _clean_body(raw_body),
                     "url": url,
                     "source": src,
+                    "date": _extract_date(raw_body),
                 })
             return out
     except Exception as e:

@@ -213,6 +213,10 @@ with gr.Blocks(title="World In The Stands") as demo:
     demo.load(fn=auto_load_stories, inputs=[], outputs=[story_out])
 
 
+# Warm the cache at import time (HF's SSR runtime may not run this file as __main__),
+# so the very first page load already has stories — no one waits on the pipeline.
+_prewarm()
+
+
 if __name__ == "__main__":
-    _prewarm()
     demo.launch(head=_head)

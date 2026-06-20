@@ -146,6 +146,7 @@ Example: [{{"index": 0, "category": "funny", "caption": "Brazilian fan discovers
             "has_direct_link": t.get("has_direct_link", False),
             "score": item.get("score"),
             "author": item.get("author", ""),
+            "date": item.get("date", ""),
         })
 
     return output
